@@ -10,6 +10,7 @@ import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../providers/theme_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import 'main_navigation_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -21,6 +22,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String? _generatedApiKey;
   bool _isCopied = false;
+  bool _pushNotifications = true;
+  bool _emailNotifications = false;
 
   void _generateKey() {
     final rand = Random();
@@ -46,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Ambient purple light
+          // Background glow
           Positioned(
             bottom: 50,
             right: -100,
@@ -55,10 +58,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.accentPurple.withValues(alpha: 0.04),
+                color: AppColors.accentPurple.withValues(alpha: isDark ? 0.04 : 0.01),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.accentPurple.withValues(alpha: 0.04),
+                    color: AppColors.accentPurple.withValues(alpha: isDark ? 0.04 : 0.01),
                     blurRadius: 100,
                     spreadRadius: 20,
                   ),
@@ -69,13 +72,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           SafeArea(
             child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 24.0, bottom: 120.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Header
                   Text(
-                    'WORKSPACE SETTINGS',
+                    'PORTAL CONFIGURATION',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
@@ -85,51 +89,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Profile Portal',
+                    'Profile Settings',
                     style: Theme.of(context).textTheme.displaySmall?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                   ),
                   const SizedBox(height: 28),
 
-                  // Avatar card
-                  _buildAvatarCard(context, name, email, isDark, primaryAccent),
-                  const SizedBox(height: 28),
-
-                  // Arc style Theme Switcher
+                  // 1. Personal Information Card
                   Text(
-                    'Appearance Mode',
+                    'Personal Information',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                   ),
                   const SizedBox(height: 16),
-                  _buildThemeSwitcher(context, themeProvider, isDark, primaryAccent),
+                  _buildPersonalInfoCard(context, name, email, isDark, primaryAccent),
                   const SizedBox(height: 28),
 
-                  // API Token Generator
+                  // 2. Purchased Services
                   Text(
-                    'Developer Access Keys',
+                    'Purchased Services',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                   ),
                   const SizedBox(height: 16),
-                  _buildApiGenerator(context, isDark, primaryAccent),
+                  _buildPurchasedServicesList(context, isDark, primaryAccent),
                   const SizedBox(height: 28),
 
-                  // Stripe-style Billing History
+                  // 3. Documents
                   Text(
-                    'Billing History',
+                    'Shared Documents',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w800,
                         ),
                   ),
                   const SizedBox(height: 16),
-                  _buildBillingHistory(context, isDark),
+                  _buildDocumentsList(context, isDark, primaryAccent),
+                  const SizedBox(height: 28),
+
+                  // 4. Security & Developer Access Keys
+                  Text(
+                    'Security & Access Keys',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSecuritySection(context, isDark, primaryAccent),
+                  const SizedBox(height: 28),
+
+                  // 5. Appearance & Notifications
+                  Text(
+                    'App Settings',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildAppSettings(context, themeProvider, isDark, primaryAccent),
                   const SizedBox(height: 32),
 
-                  // Account controls
+                  // 6. Logout / Session Control
                   _buildAccountControls(context, authProvider, isDark),
                 ],
               ),
@@ -140,7 +162,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAvatarCard(
+  Widget _buildPersonalInfoCard(
     BuildContext context,
     String name,
     String email,
@@ -149,162 +171,170 @@ class _ProfileScreenState extends State<ProfileScreen> {
   ) {
     return GlassCard(
       borderRadius: 24,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Row(
         children: [
           CircleAvatar(
-            radius: 32,
+            radius: 28,
             backgroundColor: accentColor.withValues(alpha: 0.15),
             child: Text(
               name.substring(0, min(name.length, 2)).toUpperCase(),
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: accentColor,
               ),
             ),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   name,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16.5),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   email,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 12.5,
                     color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(100),
-                    color: accentColor.withValues(alpha: 0.1),
-                  ),
-                  child: Text(
-                    'ENTERPRISE MEMBER',
-                    style: TextStyle(
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.8,
-                      color: accentColor,
-                    ),
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeSwitcher(
-    BuildContext context,
-    ThemeProvider provider,
-    bool isDark,
-    Color accentColor,
-  ) {
-    return GlassCard(
-      borderRadius: 20,
-      padding: const EdgeInsets.all(8),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildThemeOption(
-              label: 'Dark Mode first',
-              isActive: provider.isDarkMode,
-              onTap: () {
-                if (!provider.isDarkMode) {
-                  provider.toggleTheme();
-                }
-              },
-              isDark: isDark,
-              accentColor: accentColor,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(100),
+              color: accentColor.withValues(alpha: 0.1),
             ),
-          ),
-          Expanded(
-            child: _buildThemeOption(
-              label: 'Light Mode',
-              isActive: !provider.isDarkMode,
-              onTap: () {
-                if (provider.isDarkMode) {
-                  provider.toggleTheme();
-                }
-              },
-              isDark: isDark,
-              accentColor: accentColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeOption({
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-    required bool isDark,
-    required Color accentColor,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: isActive ? (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)) : Colors.transparent,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (isActive) ...[
-              Icon(Icons.check_circle_outline, size: 16, color: accentColor),
-              const SizedBox(width: 8),
-            ],
-            Text(
-              label,
+            child: Text(
+              'ACTIVE',
               style: TextStyle(
-                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                fontSize: 13,
-                color: isActive
-                    ? (isDark ? Colors.white : Colors.black)
-                    : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                fontSize: 8.5,
+                fontWeight: FontWeight.bold,
+                color: accentColor,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildApiGenerator(BuildContext context, bool isDark, Color accentColor) {
+  Widget _buildPurchasedServicesList(BuildContext context, bool isDark, Color accentColor) {
+    final services = [
+      {'title': 'App Development MVP', 'date': 'Active from June 1, 2026'},
+      {'title': 'Premium SEO Engine', 'date': 'Active from May 15, 2026'},
+    ];
+
+    return Column(
+      children: services.map((s) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: GlassCard(
+            borderRadius: 16,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(s['title']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                    const SizedBox(height: 4),
+                    Text(
+                      s['date']!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                Icon(Icons.arrow_forward_ios_rounded, size: 12, color: accentColor.withValues(alpha: 0.5)),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildDocumentsList(BuildContext context, bool isDark, Color accentColor) {
+    final docs = [
+      {'name': 'NZXT-Service_Agreement.pdf', 'date': 'Signed June 1, 2026'},
+      {'name': 'Figma-Architecture_Specs.pdf', 'date': 'Uploaded May 28, 2026'},
+    ];
+
+    return Column(
+      children: docs.map((d) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: GlassCard(
+            borderRadius: 16,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            child: Row(
+              children: [
+                const Icon(Icons.insert_drive_file_outlined, color: AppColors.accentBlue, size: 18),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        d['name']!,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        d['date']!,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.download_rounded, size: 16, color: accentColor),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildSecuritySection(BuildContext context, bool isDark, Color accentColor) {
     return GlassCard(
       borderRadius: 20,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
-            'Generate a temporary Workspace API Key for integrating external pipelines (e.g. CLI commands).',
-            style: TextStyle(fontSize: 12.5, height: 1.5),
+            'Developer Access Keys',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Generate a secure API key to authenticate external automation pipelines or CLI utilities.',
+            style: TextStyle(fontSize: 12, height: 1.4, color: Colors.grey),
           ),
           const SizedBox(height: 16),
           if (_generatedApiKey != null) ...[
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
                 color: isDark ? Colors.black26 : Colors.white24,
-                border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.1)),
+                border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
               ),
               child: Row(
                 children: [
@@ -313,7 +343,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _generatedApiKey!,
                       style: const TextStyle(
                         fontFamily: 'Courier',
-                        fontSize: 12,
+                        fontSize: 11.5,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -345,9 +375,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 16),
           ],
           PrimaryButton(
-            text: _generatedApiKey != null ? 'Re-generate Token' : 'Create Live API Token',
+            text: _generatedApiKey != null ? 'Re-generate Key' : 'Create API Token',
             outline: true,
-            height: 48,
+            height: 44,
             onPressed: _generateKey,
           ),
         ],
@@ -355,86 +385,116 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildBillingHistory(BuildContext context, bool isDark) {
-    final invoices = [
-      {'date': 'June 1, 2026', 'amount': '\$5,499.00', 'status': 'PAID'},
-      {'date': 'May 15, 2026', 'amount': '\$6,999.00', 'status': 'PAID'},
-    ];
-
+  Widget _buildAppSettings(
+    BuildContext context,
+    ThemeProvider themeProvider,
+    bool isDark,
+    Color accentColor,
+  ) {
     return Column(
-      children: List.generate(
-        invoices.length,
-        (index) {
-          final item = invoices[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: GlassCard(
-              borderRadius: 16,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Theme switcher option
+        GlassCard(
+          borderRadius: 16,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item['date']!,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Sprint Invoicing',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Text(
-                        item['amount']!,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(4),
-                          color: Colors.green.withValues(alpha: 0.1),
-                        ),
-                        child: const Text(
-                          'PAID',
-                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.green),
-                        ),
-                      ),
-                    ],
-                  ),
+                  Icon(Icons.dark_mode_outlined, size: 20),
+                  SizedBox(width: 12),
+                  Text('Dark Mode Appearance', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
                 ],
               ),
-            ),
-          );
-        },
-      ),
+              Switch.adaptive(
+                value: themeProvider.isDarkMode,
+                activeThumbColor: accentColor,
+                onChanged: (_) {
+                  themeProvider.toggleTheme();
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Push notifications switch
+        GlassCard(
+          borderRadius: 16,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.notifications_active_outlined, size: 20),
+                  SizedBox(width: 12),
+                  Text('Push Notifications', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                ],
+              ),
+              Switch.adaptive(
+                value: _pushNotifications,
+                activeThumbColor: accentColor,
+                onChanged: (val) {
+                  setState(() {
+                    _pushNotifications = val;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Email notifications switch
+        GlassCard(
+          borderRadius: 16,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.email_outlined, size: 20),
+                  SizedBox(width: 12),
+                  Text('Email Alerts & Invoices', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                ],
+              ),
+              Switch.adaptive(
+                value: _emailNotifications,
+                activeThumbColor: accentColor,
+                onChanged: (val) {
+                  setState(() {
+                    _emailNotifications = val;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildAccountControls(BuildContext context, AuthProvider auth, bool isDark) {
     if (auth.isAuthenticated) {
       return PrimaryButton(
-        text: 'Logout Workspace Session',
+        text: 'Logout Session',
         outline: true,
         textColor: Colors.redAccent,
         gradient: const LinearGradient(colors: [Colors.redAccent, Colors.red]),
         onPressed: () {
           auth.logout();
+          // Reset to home index
+          final navState = context.findAncestorStateOfType<MainNavigationScreenState>();
+          navState?.setIndex(0);
           context.go(AppRoutes.home);
         },
       );
     } else {
       return PrimaryButton(
-        text: 'Log In Workspace',
+        text: 'Log In',
         onPressed: () {
           context.go(AppRoutes.login);
         },

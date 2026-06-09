@@ -33,12 +33,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       icon: Icons.developer_board_outlined,
       gradient: AppColors.hotGradient,
     ),
-    const OnboardingSlideData(
+    OnboardingSlideData(
       title: 'Developer CLI Keys',
       description: 'Generate secure API key tokens to integrate command-line triggers, LLM assistants, and automatic workflow tools directly into your CLI scripts.',
       icon: Icons.vpn_key_outlined,
-      gradient: LinearGradient(
-        colors: [AppColors.accentGold, AppColors.accentPink],
+      gradient: const LinearGradient(
+        colors: [AppColors.accentCyan, AppColors.accentBlue],
       ),
     ),
   ];

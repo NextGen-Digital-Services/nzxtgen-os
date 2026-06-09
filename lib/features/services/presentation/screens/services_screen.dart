@@ -307,27 +307,41 @@ class _ServicesScreenState extends State<ServicesScreen> {
     bool isDark,
     Color accentColor,
   ) {
+    // Find the starting price (lowest pricing plan or fallback)
+    final startingPrice = service.pricing.isNotEmpty ? service.pricing.first.price : 'Custom';
+    
+    // Calculate estimated total timeline duration
+    String timelineText = 'Flexible';
+    if (service.timeline.isNotEmpty) {
+      if (service.timeline.length == 1) {
+        timelineText = service.timeline.first.duration;
+      } else {
+        timelineText = '${service.timeline.first.duration.split(" ").last} - ${service.timeline.last.duration}';
+      }
+    }
+
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GlassCard(
-        borderRadius: 20,
-        padding: const EdgeInsets.all(16),
+        borderRadius: 22,
+        padding: const EdgeInsets.all(18),
         onTap: () => context.go('/services/${service.id}'),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // App icon visual style
             Container(
-              width: 56,
-              height: 56,
+              width: 60,
+              height: 60,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
                 color: accentColor.withValues(alpha: 0.1),
                 border: Border.all(color: accentColor.withValues(alpha: 0.2)),
               ),
               child: Center(
                 child: Icon(
                   service.icon,
-                  size: 24,
+                  size: 26,
                   color: accentColor,
                 ),
               ),
@@ -343,38 +357,51 @@ class _ServicesScreenState extends State<ServicesScreen> {
                     service.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15.5),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.star, color: Colors.orange, size: 12),
-                      const SizedBox(width: 4),
-                      Text(
-                        '4.9',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          startingPrice,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            color: accentColor,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
+                      Icon(
+                        Icons.access_time_rounded,
+                        size: 11,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                      ),
+                      const SizedBox(width: 4),
                       Text(
-                        '•  ${service.category}',
+                        timelineText,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
                           color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
                     service.description,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 12.5,
+                      height: 1.4,
                       color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                     ),
                   ),
@@ -384,20 +411,25 @@ class _ServicesScreenState extends State<ServicesScreen> {
             const SizedBox(width: 12),
 
             // App Store Purchase GET button
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(100),
-                color: isDark ? Colors.white10 : Colors.black12,
-              ),
-              child: Text(
-                'GET',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.accentCyan : AppColors.accentPurple,
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(100),
+                    color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.06),
+                  ),
+                  child: Text(
+                    'GET',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w900,
+                      color: isDark ? AppColors.accentCyan : AppColors.accentPurple,
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ],
         ),

@@ -157,6 +157,10 @@ class ServiceDetailScreen extends StatelessWidget {
                         _buildPricingSection(context, service, isDark, primaryAccent),
                         const SizedBox(height: 28),
 
+                        // Payment Milestones
+                        _buildPaymentSection(context, isDark, primaryAccent),
+                        const SizedBox(height: 28),
+
                         // Frequently Asked Questions
                         _buildAccordionFaqs(context, service, isDark, primaryAccent),
                       ],
@@ -215,9 +219,9 @@ class ServiceDetailScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               PrimaryButton(
-                text: 'GET',
-                height: 36,
-                width: 110,
+                text: 'Get Started',
+                height: 38,
+                width: 130,
                 onPressed: () => context.go(AppRoutes.signup),
               ),
             ],
@@ -585,6 +589,104 @@ class ServiceDetailScreen extends StatelessWidget {
           (index) => Padding(
             padding: const EdgeInsets.only(bottom: 12.0),
             child: _FaqTile(faq: service.faqs[index], isDark: isDark, accentColor: accentColor),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaymentSection(
+    BuildContext context,
+    bool isDark,
+    Color accentColor,
+  ) {
+    final stages = [
+      {
+        'title': 'Advance Payment (30%)',
+        'desc': 'Commitment retainer to allocate design sprints and book team engineers.',
+        'status': 'Stage 1'
+      },
+      {
+        'title': 'Development Starts',
+        'desc': 'Complete repository initialization, package imports, and Figma conversions.',
+        'status': 'Stage 2'
+      },
+      {
+        'title': 'Remaining Payment (50%)',
+        'desc': 'Invoice issued upon Milestone Beta release audit and internal deployment checks.',
+        'status': 'Stage 3'
+      },
+      {
+        'title': 'Final Delivery (20%)',
+        'desc': 'Transfer of vector files, source codes, and deployment key submissions.',
+        'status': 'Stage 4'
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Payment Milestones',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+        const SizedBox(height: 16),
+        Column(
+          children: List.generate(
+            stages.length,
+            (index) {
+              final stage = stages[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: GlassCard(
+                  padding: const EdgeInsets.all(16),
+                  borderRadius: 18,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          stage['status']!,
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.bold,
+                            color: accentColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              stage['title']!,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              stage['desc']!,
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                height: 1.4,
+                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ],

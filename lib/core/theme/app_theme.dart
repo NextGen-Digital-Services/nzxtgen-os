@@ -14,10 +14,10 @@ class AppTheme {
       cardColor: AppColors.darkBgSecondary,
       colorScheme: const ColorScheme.dark(
         primary: AppColors.accentCyan,
-        secondary: AppColors.accentPurple,
-        tertiary: AppColors.accentPink,
+        secondary: AppColors.accentBlue,
+        tertiary: AppColors.accentPurple,
         surface: AppColors.darkBgSecondary,
-        error: Colors.redAccent,
+        error: AppColors.error,
       ),
       textTheme: GoogleFonts.outfitTextTheme(
         ThemeData.dark().textTheme,
@@ -116,10 +116,10 @@ class AppTheme {
       cardColor: AppColors.lightBgSecondary,
       colorScheme: const ColorScheme.light(
         primary: AppColors.accentPurple,
-        secondary: AppColors.accentCyan,
-        tertiary: AppColors.accentPink,
+        secondary: AppColors.accentBlue,
+        tertiary: AppColors.accentCyan,
         surface: AppColors.lightBgSecondary,
-        error: Colors.redAccent,
+        error: AppColors.error,
       ),
       textTheme: GoogleFonts.outfitTextTheme(
         ThemeData.light().textTheme,
