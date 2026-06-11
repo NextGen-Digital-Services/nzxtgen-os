@@ -8,8 +8,10 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/widgets/ambient_glow.dart';
 import '../../../../providers/theme_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../about/presentation/screens/about_screen.dart';
 import 'main_navigation_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -23,7 +25,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? _generatedApiKey;
   bool _isCopied = false;
   bool _pushNotifications = true;
-  bool _emailNotifications = false;
 
   void _generateKey() {
     final rand = Random();
@@ -39,119 +40,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeProvider = Provider.of<ThemeProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    final primaryAccent = isDark ? AppColors.accentCyan : AppColors.accentPurple;
+    final primaryAccent = isDark ? AppColors.primaryAccent : AppColors.accentBright;
 
     final name = authProvider.isAuthenticated ? (authProvider.username ?? 'Alex Carter') : 'Demo Guest';
     final email = authProvider.isAuthenticated ? (authProvider.email ?? 'guest@nzxtgen.com') : 'guest@nzxtgen.com';
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+      backgroundColor: isDark ? AppColors.baseCanvas : AppColors.lightBaseCanvas,
+      appBar: AppBar(
+        title: const Text('Profile Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
           // Background glow
-          Positioned(
+          const Positioned(
             bottom: 50,
             right: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.accentPurple.withValues(alpha: isDark ? 0.04 : 0.01),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.accentPurple.withValues(alpha: isDark ? 0.04 : 0.01),
-                    blurRadius: 100,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
-            ),
+            child: AmbientGlow(color: AppColors.primaryAccent, size: 400),
           ),
 
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 24.0, bottom: 120.0),
+              padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 120.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
-                  Text(
-                    'PORTAL CONFIGURATION',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2.0,
-                      color: primaryAccent,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Profile Settings',
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 28),
-
                   // 1. Personal Information Card
-                  Text(
-                    'Personal Information',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
                   _buildPersonalInfoCard(context, name, email, isDark, primaryAccent),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
 
-                  // 2. Purchased Services
+                  // 2. Navigation Actions Grid
                   Text(
-                    'Purchased Services',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                    'PORTAL SECTIONS',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: AppColors.textTertiary),
                   ),
-                  const SizedBox(height: 16),
-                  _buildPurchasedServicesList(context, isDark, primaryAccent),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 12),
+                  _buildNavigationOptions(context, authProvider.isAuthenticated),
+                  const SizedBox(height: 24),
 
-                  // 3. Documents
+                  // 3. Security & Developer Access Keys
                   Text(
-                    'Shared Documents',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                    'SECURITY & ACCESS KEYS',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: AppColors.textTertiary),
                   ),
-                  const SizedBox(height: 16),
-                  _buildDocumentsList(context, isDark, primaryAccent),
-                  const SizedBox(height: 28),
-
-                  // 4. Security & Developer Access Keys
-                  Text(
-                    'Security & Access Keys',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   _buildSecuritySection(context, isDark, primaryAccent),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 24),
 
-                  // 5. Appearance & Notifications
+                  // 4. App Settings
                   Text(
-                    'App Settings',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                    'SYSTEM CONFIGURATIONS',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: AppColors.textTertiary),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   _buildAppSettings(context, themeProvider, isDark, primaryAccent),
                   const SizedBox(height: 32),
 
-                  // 6. Logout / Session Control
+                  // 5. Logout Button
                   _buildAccountControls(context, authProvider, isDark),
                 ],
               ),
@@ -170,8 +117,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     Color accentColor,
   ) {
     return GlassCard(
-      borderRadius: 24,
-      padding: const EdgeInsets.all(20),
+      tier: GlassTier.tier2,
       child: Row(
         children: [
           CircleAvatar(
@@ -193,14 +139,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16.5),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16.5),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   email,
                   style: TextStyle(
                     fontSize: 12.5,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
                   ),
                 ),
               ],
@@ -210,14 +156,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(100),
-              color: accentColor.withValues(alpha: 0.1),
+              color: AppColors.secondary.withValues(alpha: 0.15),
             ),
-            child: Text(
+            child: const Text(
               'ACTIVE',
               style: TextStyle(
                 fontSize: 8.5,
                 fontWeight: FontWeight.bold,
-                color: accentColor,
+                color: AppColors.secondary,
               ),
             ),
           ),
@@ -226,106 +172,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildPurchasedServicesList(BuildContext context, bool isDark, Color accentColor) {
-    final services = [
-      {'title': 'App Development MVP', 'date': 'Active from June 1, 2026'},
-      {'title': 'Premium SEO Engine', 'date': 'Active from May 15, 2026'},
-    ];
-
-    return Column(
-      children: services.map((s) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: GlassCard(
-            borderRadius: 16,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(s['title']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-                    const SizedBox(height: 4),
-                    Text(
-                      s['date']!,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-                Icon(Icons.arrow_forward_ios_rounded, size: 12, color: accentColor.withValues(alpha: 0.5)),
-              ],
-            ),
+  Widget _buildNavigationOptions(BuildContext context, bool isAuthenticated) {
+    return GlassCard(
+      tier: GlassTier.tier2,
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          ListTile(
+            leading: const Icon(Icons.payment_outlined, color: AppColors.primaryAccent),
+            title: const Text('Payments & Invoices', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 12),
+            onTap: () {
+              if (isAuthenticated) {
+                context.push(AppRoutes.payments);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please sign in to view invoices.'), backgroundColor: AppColors.error),
+                );
+              }
+            },
           ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildDocumentsList(BuildContext context, bool isDark, Color accentColor) {
-    final docs = [
-      {'name': 'NZXT-Service_Agreement.pdf', 'date': 'Signed June 1, 2026'},
-      {'name': 'Figma-Architecture_Specs.pdf', 'date': 'Uploaded May 28, 2026'},
-    ];
-
-    return Column(
-      children: docs.map((d) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: GlassCard(
-            borderRadius: 16,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            child: Row(
-              children: [
-                const Icon(Icons.insert_drive_file_outlined, color: AppColors.accentBlue, size: 18),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        d['name']!,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        d['date']!,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(Icons.download_rounded, size: 16, color: accentColor),
-              ],
-            ),
+          const Divider(color: Colors.white10, height: 1),
+          ListTile(
+            leading: const Icon(Icons.notifications_none_rounded, color: AppColors.primaryAccent),
+            title: const Text('System Notifications', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 12),
+            onTap: () {
+              context.push(AppRoutes.notifications);
+            },
           ),
-        );
-      }).toList(),
+          const Divider(color: Colors.white10, height: 1),
+          ListTile(
+            leading: const Icon(Icons.info_outline_rounded, color: AppColors.primaryAccent),
+            title: const Text('About NZXTGEN Agency', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 12),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AboutScreen()),
+              );
+            },
+          ),
+          const Divider(color: Colors.white10, height: 1),
+          ListTile(
+            leading: const Icon(Icons.help_outline_rounded, color: AppColors.primaryAccent),
+            title: const Text('Help & Support Desk', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 12),
+            onTap: () {
+              final navState = context.findAncestorStateOfType<MainNavigationScreenState>();
+              navState?.setIndex(3); // Go to Support Tab
+            },
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildSecuritySection(BuildContext context, bool isDark, Color accentColor) {
     return GlassCard(
-      borderRadius: 20,
-      padding: const EdgeInsets.all(18),
+      tier: GlassTier.tier2,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text(
             'Developer Access Keys',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
           ),
           const SizedBox(height: 6),
           const Text(
             'Generate a secure API key to authenticate external automation pipelines or CLI utilities.',
-            style: TextStyle(fontSize: 12, height: 1.4, color: Colors.grey),
+            style: TextStyle(fontSize: 11.5, height: 1.4, color: AppColors.textTertiary),
           ),
           const SizedBox(height: 16),
           if (_generatedApiKey != null) ...[
@@ -376,7 +292,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
           PrimaryButton(
             text: _generatedApiKey != null ? 'Re-generate Key' : 'Create API Token',
-            outline: true,
+            variant: ButtonVariant.ghost,
             height: 44,
             onPressed: _generateKey,
           ),
@@ -395,21 +311,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         // Theme switcher option
         GlassCard(
-          borderRadius: 16,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          tier: GlassTier.tier2,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Row(
                 children: [
-                  Icon(Icons.dark_mode_outlined, size: 20),
+                  Icon(Icons.dark_mode_outlined, size: 20, color: AppColors.primaryAccent),
                   SizedBox(width: 12),
-                  Text('Dark Mode Appearance', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                  Text('Dark Mode Appearance', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ],
               ),
               Switch.adaptive(
                 value: themeProvider.isDarkMode,
-                activeThumbColor: accentColor,
+                activeTrackColor: accentColor,
                 onChanged: (_) {
                   themeProvider.toggleTheme();
                 },
@@ -421,52 +337,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         // Push notifications switch
         GlassCard(
-          borderRadius: 16,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          tier: GlassTier.tier2,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Row(
                 children: [
-                  Icon(Icons.notifications_active_outlined, size: 20),
+                  Icon(Icons.notifications_active_outlined, size: 20, color: AppColors.primaryAccent),
                   SizedBox(width: 12),
-                  Text('Push Notifications', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                  Text('Push Notifications', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ],
               ),
               Switch.adaptive(
                 value: _pushNotifications,
-                activeThumbColor: accentColor,
+                activeTrackColor: accentColor,
                 onChanged: (val) {
                   setState(() {
                     _pushNotifications = val;
-                  });
-                },
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Email notifications switch
-        GlassCard(
-          borderRadius: 16,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.email_outlined, size: 20),
-                  SizedBox(width: 12),
-                  Text('Email Alerts & Invoices', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-                ],
-              ),
-              Switch.adaptive(
-                value: _emailNotifications,
-                activeThumbColor: accentColor,
-                onChanged: (val) {
-                  setState(() {
-                    _emailNotifications = val;
                   });
                 },
               ),
@@ -481,22 +369,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (auth.isAuthenticated) {
       return PrimaryButton(
         text: 'Logout Session',
-        outline: true,
-        textColor: Colors.redAccent,
-        gradient: const LinearGradient(colors: [Colors.redAccent, Colors.red]),
+        variant: ButtonVariant.destructive,
         onPressed: () {
           auth.logout();
-          // Reset to home index
           final navState = context.findAncestorStateOfType<MainNavigationScreenState>();
-          navState?.setIndex(0);
-          context.go(AppRoutes.home);
+          navState?.setIndex(0); // Go back home
         },
       );
     } else {
       return PrimaryButton(
-        text: 'Log In',
+        text: 'Log In Workspace',
+        variant: ButtonVariant.primary,
         onPressed: () {
-          context.go(AppRoutes.login);
+          context.push(AppRoutes.login);
         },
       );
     }

@@ -1,160 +1,226 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/routes/app_routes.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/widgets/status_badge.dart';
+import '../../../../core/widgets/ambient_glow.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  String _selectedFilter = 'All';
+  final List<String> _filters = ['All', 'Active', 'Completed', 'Pending'];
+
+  final List<Map<String, dynamic>> _projects = [
+    {
+      'id': 'mobile',
+      'name': 'Mobile App Pipeline MVP',
+      'category': 'Mobile App Development',
+      'progress': 0.60,
+      'nextMilestone': 'Next: Local SQLite Integration due Jun 25',
+      'status': 'Active',
+      'statusType': StatusType.active,
+      'color': Colors.cyan,
+      'lastUpdate': '3h ago',
+    },
+    {
+      'id': 'website',
+      'name': 'Web Platform Conversion Sprint',
+      'category': 'Website Development',
+      'progress': 0.85,
+      'nextMilestone': 'Next: Contentful CMS Deployment due Jun 20',
+      'status': 'Active',
+      'statusType': StatusType.active,
+      'color': Colors.indigo,
+      'lastUpdate': '1d ago',
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final authProvider = Provider.of<AuthProvider>(context);
-    final primaryAccent = isDark ? AppColors.accentCyan : AppColors.accentPurple;
+    final primaryAccent = isDark ? AppColors.primaryAccent : AppColors.accentBright;
 
-    // Check auth status to show auth lock state
+    // Check auth status
     if (!authProvider.isAuthenticated) {
       return _buildGuestLockState(context, isDark, primaryAccent);
     }
 
+    final filteredProjects = _projects.where((p) {
+      if (_selectedFilter == 'All') return true;
+      return p['status'] == _selectedFilter;
+    }).toList();
+
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+      backgroundColor: isDark ? AppColors.baseCanvas : AppColors.lightBaseCanvas,
+      appBar: AppBar(
+        title: const Text('Workspace Portal', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {},
+          ),
+        ],
+      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
           // Background ambient spot
-          Positioned(
+          const Positioned(
             top: 50,
             right: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: primaryAccent.withValues(alpha: 0.05),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryAccent.withValues(alpha: 0.05),
-                    blurRadius: 100,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
-            ),
+            child: AmbientGlow(color: AppColors.primaryAccent, size: 500),
           ),
 
           SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 24.0, bottom: 120.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'MY PORTAL',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 2.0,
-                              color: primaryAccent,
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 10.0, bottom: 120.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // SUMMARY STATS ROW
+                        SizedBox(
+                          height: 100,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            children: [
+                              _buildSummaryCard(context, 'Total Invested', '₹70,000', primaryAccent),
+                              const SizedBox(width: 12),
+                              _buildSummaryCard(context, 'Active Projects', '2', Colors.white),
+                              const SizedBox(width: 12),
+                              _buildSummaryCard(context, 'Completed Projects', '0', Colors.white),
+                              const SizedBox(width: 12),
+                              _buildSummaryCard(context, 'Pending Amount', '₹50,000', AppColors.warning),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+
+                        // PROJECTS SECTION
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'YOUR PROJECTS',
+                              style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5, color: AppColors.textTertiary),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Client Dashboard',
-                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                  fontWeight: FontWeight.w800,
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Filter chips
+                        SizedBox(
+                          height: 36,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _filters.length,
+                            separatorBuilder: (context, index) => const SizedBox(width: 8),
+                            itemBuilder: (context, index) {
+                              final filter = _filters[index];
+                              final isSelected = _selectedFilter == filter;
+
+                              return ChoiceChip(
+                                label: Text(
+                                  filter,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: isSelected ? Colors.white : AppColors.textTertiary,
+                                  ),
                                 ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(100),
-                          border: Border.all(
-                            color: primaryAccent.withValues(alpha: 0.3),
-                          ),
-                          color: primaryAccent.withValues(alpha: 0.06),
-                        ),
-                        child: Text(
-                          'NZXT-MEMBER',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: primaryAccent,
+                                selected: isSelected,
+                                onSelected: (val) {
+                                  setState(() {
+                                    _selectedFilter = filter;
+                                  });
+                                },
+                                selectedColor: primaryAccent,
+                                backgroundColor: isDark ? AppColors.surfaceLevel2 : AppColors.lightSurfaceLevel2,
+                                side: BorderSide(color: isDark ? Colors.white10 : Colors.black12),
+                                showCheckmark: false,
+                              );
+                            },
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
+                        const SizedBox(height: 16),
 
-                  // 1. Active Projects & Phase Tracker (Planning -> Completed)
-                  Text(
-                    'Active Project Timeline',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
+                        // PROJECT CARDS LIST
+                        if (filteredProjects.isEmpty)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.only(top: 40.0),
+                              child: Text('No projects matching filter.', style: TextStyle(color: AppColors.textTertiary)),
+                            ),
+                          )
+                        else
+                          ...List.generate(filteredProjects.length, (index) {
+                            final p = filteredProjects[index];
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 16.0),
+                              child: _buildProjectCard(context, p, isDark, primaryAccent),
+                            );
+                          }),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  _buildProjectStatusTracker(context, isDark, primaryAccent),
-                  const SizedBox(height: 28),
+                ),
+              ],
+            ),
+          ),
 
-                  // 2. My Services
-                  Text(
-                    'My Active Services',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildMyServices(context, isDark, primaryAccent),
-                  const SizedBox(height: 28),
-
-                  // 3. Pending Payments
-                  Text(
-                    'Pending Payments',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildPendingPayments(context, isDark, primaryAccent),
-                  const SizedBox(height: 28),
-
-                  // 4. Recent Documents
-                  Text(
-                    'Recent Shared Documents',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildRecentDocuments(context, isDark, primaryAccent),
-                  const SizedBox(height: 28),
-
-                  // 5. Open Support Tickets (Linear style)
-                  Text(
-                    'Open Support Tickets',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildSupportTickets(context, isDark, primaryAccent),
-                ],
+          // QUICK ACTIONS FLOATING ROW
+          Positioned(
+            bottom: 100, // Kept above bottom nav
+            left: 20,
+            right: 20,
+            child: Center(
+              child: GlassCard(
+                tier: GlassTier.tier2,
+                borderRadius: 9999, // Pill Container
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildFloatingActionItem(
+                      icon: Icons.cloud_upload_outlined,
+                      onTap: () {
+                        // Redirect to project mobile details Files tab
+                        context.push('/project/mobile');
+                      },
+                    ),
+                    const SizedBox(width: 16),
+                    _buildFloatingActionItem(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      onTap: () => context.push(AppRoutes.chat),
+                    ),
+                    const SizedBox(width: 16),
+                    _buildFloatingActionItem(
+                      icon: Icons.receipt_long_outlined,
+                      onTap: () => context.push(AppRoutes.payments),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -163,41 +229,187 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildSummaryCard(BuildContext context, String label, String value, Color textColor) {
+    return GlassCard(
+      tier: GlassTier.tier2,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      width: 140,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 9, color: AppColors.textTertiary)),
+          Text(
+            value,
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProjectCard(BuildContext context, Map<String, dynamic> p, bool isDark, Color accentColor) {
+    return Container(
+      height: 146,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: GlassCard(
+        tier: GlassTier.tier2,
+        padding: EdgeInsets.zero,
+        onTap: () {
+          context.push('/project/${p['id']}');
+        },
+        child: Row(
+          children: [
+            // Left Accent Bar
+            Container(
+              width: 4,
+              height: double.infinity,
+              color: p['color'] as Color,
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Top row: category and progress
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: (p['color'] as Color).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            (p['category'] as String).toUpperCase(),
+                            style: TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: p['color']),
+                          ),
+                        ),
+                        Text(
+                          '${((p['progress'] as double) * 100).toInt()}%',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: accentColor),
+                        ),
+                      ],
+                    ),
+
+                    // Title
+                    Text(
+                      p['name'],
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+
+                    // Progress Bar
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(3),
+                      child: LinearProgressIndicator(
+                        value: p['progress'] as double,
+                        minHeight: 5,
+                        backgroundColor: Colors.white10,
+                        valueColor: AlwaysStoppedAnimation<Color>(p['color'] as Color),
+                      ),
+                    ),
+
+                    // Milestone text
+                    Text(
+                      p['nextMilestone'],
+                      style: const TextStyle(fontSize: 10.5, color: AppColors.textTertiary),
+                    ),
+
+                    // Bottom Row: status, overlapping avatar group, time
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        StatusBadge(label: p['status'], type: p['statusType'] as StatusType),
+                        Row(
+                          children: [
+                            // Overlapping avatars
+                            SizedBox(
+                              width: 50,
+                              height: 20,
+                              child: Stack(
+                                children: [
+                                  Positioned(left: 0, child: _buildMiniAvatar('F', Colors.purple)),
+                                  Positioned(left: 12, child: _buildMiniAvatar('Z', Colors.teal)),
+                                  Positioned(left: 24, child: _buildMiniAvatar('M', Colors.blue)),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(p['lastUpdate'], style: const TextStyle(fontSize: 9.5, color: AppColors.textTertiary)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMiniAvatar(String initial, Color color) {
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.black, width: 1.5),
+      ),
+      child: CircleAvatar(
+        radius: 9,
+        backgroundColor: color.withValues(alpha: 0.2),
+        child: Text(
+          initial,
+          style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: color),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFloatingActionItem({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return CircleAvatar(
+      radius: 20,
+      backgroundColor: AppColors.primaryAccent.withValues(alpha: 0.15),
+      child: IconButton(
+        icon: Icon(icon, color: AppColors.primaryAccent, size: 18),
+        onPressed: onTap,
+      ),
+    );
+  }
+
   Widget _buildGuestLockState(BuildContext context, bool isDark, Color accentColor) {
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+      backgroundColor: isDark ? AppColors.baseCanvas : AppColors.lightBaseCanvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background ambient lights
           Positioned(
             top: 200,
             left: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: accentColor.withValues(alpha: 0.05),
-                boxShadow: [
-                  BoxShadow(
-                    color: accentColor.withValues(alpha: 0.05),
-                    blurRadius: 100,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
-            ),
+            child: AmbientGlow(color: accentColor, size: 500),
           ),
-
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: GlassCard(
-                padding: const EdgeInsets.all(32),
-                borderRadius: 28,
+                tier: GlassTier.tier3,
                 showGlow: true,
-                glowColor: accentColor,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -213,7 +425,7 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 24),
                     const Text(
                       'Portal Restricted',
-                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -222,17 +434,17 @@ class DashboardScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         height: 1.5,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                        color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
                       ),
                     ),
                     const SizedBox(height: 28),
                     PrimaryButton(
                       text: 'Log In Workspace',
-                      onPressed: () => context.go(AppRoutes.login),
+                      onPressed: () => context.push(AppRoutes.login),
                     ),
                     const SizedBox(height: 14),
                     TextButton(
-                      onPressed: () => context.go(AppRoutes.signup),
+                      onPressed: () => context.push(AppRoutes.signup),
                       child: Text(
                         'Create Account',
                         style: TextStyle(color: accentColor, fontWeight: FontWeight.bold),
@@ -245,283 +457,6 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildProjectStatusTracker(BuildContext context, bool isDark, Color accentColor) {
-    final stages = [
-      {'name': 'Planning', 'active': true},
-      {'name': 'Design', 'active': true},
-      {'name': 'Dev', 'active': true},
-      {'name': 'Testing', 'active': false},
-      {'name': 'Completed', 'active': false},
-    ];
-
-    return GlassCard(
-      borderRadius: 24,
-      padding: const EdgeInsets.all(22),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Mobile App Release',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              Text(
-                '60% Complete',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: accentColor),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Steps indicator
-          Row(
-            children: List.generate(stages.length, (index) {
-              final s = stages[index];
-              final isActive = s['active'] as bool;
-              final isLast = index == stages.length - 1;
-
-              return Expanded(
-                child: Row(
-                  children: [
-                    Column(
-                      children: [
-                        Container(
-                          width: 18,
-                          height: 18,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isActive ? accentColor : (isDark ? Colors.white24 : Colors.black12),
-                              width: 2,
-                            ),
-                            color: isActive ? accentColor : Colors.transparent,
-                          ),
-                          child: isActive
-                              ? const Icon(Icons.check, size: 10, color: Colors.black)
-                              : null,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          s['name'] as String,
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                            color: isActive 
-                                ? (isDark ? Colors.white : Colors.black)
-                                : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (!isLast)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 14.0),
-                          child: Container(
-                            height: 2,
-                            color: isActive 
-                                ? accentColor.withValues(alpha: 0.5) 
-                                : (isDark ? Colors.white12 : Colors.black12),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMyServices(BuildContext context, bool isDark, Color accentColor) {
-    final purchased = [
-      {'title': 'App Development MVP', 'billing': 'Monthly Sprinting', 'price': '\$6,499/mo', 'icon': Icons.phone_iphone},
-      {'title': 'Premium SEO Engine', 'billing': 'Monthly Authority', 'price': '\$3,499/mo', 'icon': Icons.search},
-    ];
-
-    return Column(
-      children: purchased.map((s) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: GlassCard(
-            borderRadius: 18,
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(s['icon'] as IconData, color: accentColor, size: 20),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(s['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-                      const SizedBox(height: 4),
-                      Text(
-                        s['billing'] as String,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  s['price'] as String,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildPendingPayments(BuildContext context, bool isDark, Color accentColor) {
-    return GlassCard(
-      borderRadius: 20,
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Next Invoicing Milestone', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              SizedBox(height: 4),
-              Text('Development Completion Stage (50%)', style: TextStyle(fontSize: 11, color: Colors.grey)),
-            ],
-          ),
-          Row(
-            children: [
-              const Text('\$3,250', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15)),
-              const SizedBox(width: 12),
-              PrimaryButton(
-                text: 'Pay',
-                width: 65,
-                height: 32,
-                onPressed: () {},
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentDocuments(BuildContext context, bool isDark, Color accentColor) {
-    final docs = [
-      {'name': 'NZXT-Service_Agreement.pdf', 'size': '1.2 MB'},
-      {'name': 'Figma-Architecture_Specs.pdf', 'size': '4.8 MB'},
-    ];
-
-    return Column(
-      children: docs.map((d) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: GlassCard(
-            borderRadius: 16,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                const Icon(Icons.insert_drive_file_outlined, color: AppColors.accentBlue, size: 20),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Text(
-                    d['name']!,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Text(
-                  d['size']!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Icon(Icons.download_rounded, color: accentColor, size: 16),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildSupportTickets(BuildContext context, bool isDark, Color accentColor) {
-    final tickets = [
-      {'id': 'TKT-901', 'title': 'Stripe webhook payment verification delay', 'status': 'Pending Audit', 'priority': 'High'},
-      {'id': 'TKT-902', 'title': 'Configure custom domains for dev host', 'status': 'Closed', 'priority': 'Medium'},
-    ];
-
-    return Column(
-      children: tickets.map((t) {
-        final status = t['status']!;
-        final isClosed = status == 'Closed';
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12.0),
-          child: GlassCard(
-            borderRadius: 16,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Icon(
-                  isClosed ? Icons.check_circle : Icons.error_outline,
-                  color: isClosed ? AppColors.success : AppColors.warning,
-                  size: 16,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  t['id']!,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11.5,
-                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    t['title']!,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                  ),
-                  child: Text(
-                    t['priority']!,
-                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 }

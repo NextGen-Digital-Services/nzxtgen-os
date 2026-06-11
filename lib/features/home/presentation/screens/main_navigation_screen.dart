@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../services/presentation/screens/services_screen.dart';
-import '../../../about/presentation/screens/about_screen.dart';
 import 'home_screen.dart';
 import 'dashboard_screen.dart';
+import 'support_screen.dart';
 import 'profile_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -20,8 +20,8 @@ class MainNavigationScreenState extends State<MainNavigationScreen> {
   final List<Widget> _tabs = const [
     HomeScreen(),
     ServicesScreen(),
-    AboutScreen(),
     DashboardScreen(),
+    SupportScreen(),
     ProfileScreen(),
   ];
 
@@ -34,57 +34,87 @@ class MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark ? AppColors.primaryAccent : AppColors.accentBright;
+
+    // Alignment logic for the sliding pill background
+    // Alignment ranges from -1.0 (left) to 1.0 (right)
+    final double alignmentX = -1.0 + (_currentIndex * 0.5);
 
     return Scaffold(
       extendBody: true, // Allow body to scroll behind bottom bar
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
-      body: _tabs[_currentIndex],
+      backgroundColor: isDark ? AppColors.baseCanvas : AppColors.lightBaseCanvas,
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _tabs,
+      ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: GlassCard(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            tier: GlassTier.tier1,
+            padding: const EdgeInsets.symmetric(vertical: 6),
             borderRadius: 24,
-            blur: 18,
-            borderWidth: 1.0,
-            showGlow: false,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            child: Stack(
+              alignment: Alignment.center,
               children: [
-                _buildNavItem(
-                  index: 0,
-                  icon: Icons.home_outlined,
-                  activeIcon: Icons.home,
-                  label: 'Home',
-                  isDark: isDark,
+                // Sliding Active Indicator Pill
+                Positioned.fill(
+                  child: Align(
+                    alignment: Alignment(alignmentX, 0.0),
+                    child: FractionallySizedBox(
+                      widthFactor: 0.2,
+                      child: Container(
+                        height: 38,
+                        margin: const EdgeInsets.symmetric(horizontal: 6),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: activeColor.withValues(alpha: 0.1),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                _buildNavItem(
-                  index: 1,
-                  icon: Icons.storefront_outlined,
-                  activeIcon: Icons.storefront,
-                  label: 'Services',
-                  isDark: isDark,
-                ),
-                _buildNavItem(
-                  index: 2,
-                  icon: Icons.info_outline,
-                  activeIcon: Icons.info,
-                  label: 'About',
-                  isDark: isDark,
-                ),
-                _buildNavItem(
-                  index: 3,
-                  icon: Icons.developer_board_outlined,
-                  activeIcon: Icons.developer_board,
-                  label: 'Portal',
-                  isDark: isDark,
-                ),
-                _buildNavItem(
-                  index: 4,
-                  icon: Icons.person_outline,
-                  activeIcon: Icons.person,
-                  label: 'Profile',
-                  isDark: isDark,
+
+                // Navigation Row Items
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildNavItem(
+                      index: 0,
+                      icon: Icons.home_outlined,
+                      activeIcon: Icons.home_rounded,
+                      label: 'Home',
+                      isDark: isDark,
+                    ),
+                    _buildNavItem(
+                      index: 1,
+                      icon: Icons.grid_view,
+                      activeIcon: Icons.grid_view_rounded,
+                      label: 'Services',
+                      isDark: isDark,
+                    ),
+                    _buildNavItem(
+                      index: 2,
+                      icon: Icons.analytics_outlined,
+                      activeIcon: Icons.analytics_rounded,
+                      label: 'Portal',
+                      isDark: isDark,
+                    ),
+                    _buildNavItem(
+                      index: 3,
+                      icon: Icons.headset_mic_outlined,
+                      activeIcon: Icons.headset_mic_rounded,
+                      label: 'Support',
+                      isDark: isDark,
+                    ),
+                    _buildNavItem(
+                      index: 4,
+                      icon: Icons.person_outline_rounded,
+                      activeIcon: Icons.person_rounded,
+                      label: 'Profile',
+                      isDark: isDark,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -102,49 +132,40 @@ class MainNavigationScreenState extends State<MainNavigationScreen> {
     required bool isDark,
   }) {
     final isSelected = _currentIndex == index;
-    final activeColor = isDark ? AppColors.accentCyan : AppColors.accentPurple;
-    final inactiveColor = isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final activeColor = isDark ? AppColors.primaryAccent : AppColors.accentBright;
+    final inactiveColor = isDark ? AppColors.textTertiary : AppColors.lightTextSecondary.withValues(alpha: 0.7);
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
-      },
-      behavior: HitTestBehavior.opaque,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeInOut,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: isSelected
-                      ? activeColor.withValues(alpha: 0.1)
-                      : Colors.transparent,
-                ),
-                child: Icon(
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        behavior: HitTestBehavior.opaque,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
                   isSelected ? activeIcon : icon,
                   color: isSelected ? activeColor : inactiveColor,
                   size: 20,
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? activeColor : inactiveColor,
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                    color: isSelected ? activeColor : inactiveColor,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

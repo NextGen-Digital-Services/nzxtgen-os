@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/primary_button.dart';
-import '../../../../core/utils/responsive.dart';
-import '../../../../core/routes/app_routes.dart';
+import '../../../../core/widgets/status_badge.dart';
 import '../../data/services_data.dart';
-import '../../data/models/service_model.dart';
+import 'quote_order_flow.dart';
 
 class ServiceDetailScreen extends StatelessWidget {
   final String serviceId;
@@ -18,690 +17,303 @@ class ServiceDetailScreen extends StatelessWidget {
     required this.serviceId,
   });
 
+  Gradient _getGradient(String id) {
+    switch (id) {
+      case 'website-development':
+        return const LinearGradient(colors: [Colors.indigo, Colors.purple]);
+      case 'app-development':
+        return const LinearGradient(colors: [Colors.cyan, Colors.teal]);
+      case 'ai-automation':
+        return const LinearGradient(colors: [Colors.indigo, Colors.blueAccent]);
+      default:
+        return AppColors.heroGradient;
+    }
+  }
+
+  void _openQuoteSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const QuoteOrderFlow(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // Find matching service
+
     final service = ServicesData.services.firstWhere(
       (s) => s.id == serviceId,
-      orElse: () => const ServiceModel(
-        id: '',
-        title: 'Unknown Service',
-        description: '',
-        overview: '',
-        category: '',
-        icon: Icons.error,
-        imageUrl: '',
-        benefits: [],
-        features: [],
-        timeline: [],
-        pricing: [],
-        faqs: [],
-        portfolio: [],
-      ),
+      orElse: () => ServicesData.services.first,
     );
 
-    if (service.id.isEmpty) {
-      return Scaffold(
-        backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.broken_image_outlined, size: 64, color: Colors.redAccent),
-              const SizedBox(height: 16),
-              const Text('Service Not Found', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => context.go(AppRoutes.home),
-                child: const Text('Back to Store'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final primaryAccent = isDark ? AppColors.accentCyan : AppColors.accentPurple;
+    final primaryAccent = isDark ? AppColors.primaryAccent : AppColors.accentBright;
+    final startingPrice = service.pricing.isNotEmpty ? service.pricing.first.price : 'Custom';
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+      backgroundColor: isDark ? AppColors.baseCanvas : AppColors.lightBaseCanvas,
       body: Stack(
-        fit: StackFit.expand,
         children: [
-          // Background ambient spot
-          Positioned(
-            top: 50,
-            right: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: primaryAccent.withValues(alpha: 0.04),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryAccent.withValues(alpha: 0.04),
-                    blurRadius: 100,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          SafeArea(
-            child: Column(
-              children: [
-                // Minimal Back/Header bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-                        onPressed: () => context.go(AppRoutes.home),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.share_outlined, size: 18),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
+          // Scrollable content
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              // Hero Parallax App Bar
+              SliverAppBar(
+                expandedHeight: 220.0,
+                pinned: true,
+                backgroundColor: isDark ? AppColors.baseCanvas : AppColors.lightBaseCanvas,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                  onPressed: () => context.pop(),
                 ),
-
-                // Scrollable Sheet Content
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.only(left: 24.0, right: 24.0, bottom: 40.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.share_outlined, size: 20),
+                    onPressed: () {},
+                  )
+                ],
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    decoration: BoxDecoration(
+                      gradient: _getGradient(service.id),
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
                       children: [
-                        // App Store Style Header Row
-                        _buildAppStoreHeader(context, service, primaryAccent, isDark),
-                        const SizedBox(height: 28),
-
-                        // Scrollable Media / Screenshot Cards
-                        _buildHorizontalGallery(service, isDark),
-                        const SizedBox(height: 28),
-
-                        // Linear Specifications Details Grid
-                        _buildLinearSpecsTable(context, service, isDark, primaryAccent),
-                        const SizedBox(height: 28),
-
-                        // Overview Description
-                        Text(
-                          'Description',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          service.overview,
-                          style: TextStyle(
-                            fontSize: 14.5,
-                            height: 1.6,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 28),
-
-                        // Delivery Milestones
-                        _buildMilestonesTimeline(context, service, isDark, primaryAccent),
-                        const SizedBox(height: 28),
-
-                        // Pricing Plans
-                        _buildPricingSection(context, service, isDark, primaryAccent),
-                        const SizedBox(height: 28),
-
-                        // Payment Milestones
-                        _buildPaymentSection(context, isDark, primaryAccent),
-                        const SizedBox(height: 28),
-
-                        // Frequently Asked Questions
-                        _buildAccordionFaqs(context, service, isDark, primaryAccent),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppStoreHeader(
-    BuildContext context,
-    ServiceModel service,
-    Color accentColor,
-    bool isDark,
-  ) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Rounded App shape icon
-        Container(
-          width: 96,
-          height: 96,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            color: accentColor.withValues(alpha: 0.1),
-            border: Border.all(color: accentColor.withValues(alpha: 0.2)),
-          ),
-          child: Icon(service.icon, size: 48, color: accentColor),
-        ),
-        const SizedBox(width: 20),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                service.title,
-                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 22, height: 1.2),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                service.category.toUpperCase(),
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: accentColor),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.star, color: Colors.orange, size: 14),
-                  const SizedBox(width: 4),
-                  const Text('4.9  (120 Ratings)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              PrimaryButton(
-                text: 'Get Started',
-                height: 38,
-                width: 130,
-                onPressed: () => context.go(AppRoutes.signup),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHorizontalGallery(ServiceModel service, bool isDark) {
-    return SizedBox(
-      height: 200,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: service.portfolio.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 16),
-        itemBuilder: (context, index) {
-          final item = service.portfolio[index];
-          return Container(
-            width: 280,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.1)),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: CachedNetworkImage(
-                imageUrl: item.imageUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
-                  child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                ),
-                errorWidget: (context, url, error) => const Icon(Icons.broken_image_outlined),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildLinearSpecsTable(
-    BuildContext context,
-    ServiceModel service,
-    bool isDark,
-    Color accentColor,
-  ) {
-    final specItems = [
-      {'label': 'DEVELOPER', 'value': 'NZXTGEN Inc.'},
-      {'label': 'SLA TIME', 'value': '24/7 Priority'},
-      {'label': 'TIMELINE', 'value': service.timeline.first.duration},
-      {'label': 'DEPLOYED TO', 'value': 'Stores & Web'},
-    ];
-
-    return GlassCard(
-      borderRadius: 20,
-      padding: const EdgeInsets.all(20),
-      child: Responsive(
-        mobile: Column(
-          children: List.generate(
-            specItems.length,
-            (index) {
-              final spec = specItems[index];
-              return Padding(
-                padding: EdgeInsets.only(bottom: index == specItems.length - 1 ? 0 : 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      spec['label']!,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
-                    ),
-                    Text(
-                      spec['value']!,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-        desktop: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(
-            specItems.length,
-            (index) {
-              final spec = specItems[index];
-              return Column(
-                children: [
-                  Text(
-                    spec['label']!,
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    spec['value']!,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMilestonesTimeline(
-    BuildContext context,
-    ServiceModel service,
-    bool isDark,
-    Color accentColor,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Workflow Timeline',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-        ),
-        const SizedBox(height: 16),
-        Column(
-          children: List.generate(
-            service.timeline.length,
-            (index) {
-              final step = service.timeline[index];
-              final isLast = index == service.timeline.length - 1;
-
-              return IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Column(
-                      children: [
-                        Container(
-                          width: 20,
-                          height: 20,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: accentColor, width: 2),
-                          ),
-                          child: Center(
-                            child: Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(shape: BoxShape.circle, color: accentColor),
+                        Positioned(
+                          right: -50,
+                          top: -50,
+                          child: Container(
+                            width: 200,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.1),
                             ),
                           ),
                         ),
-                        if (!isLast)
-                          Expanded(
-                            child: Container(
-                              width: 2,
-                              color: accentColor.withValues(alpha: 0.3),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 20.0),
-                        child: GlassCard(
-                          padding: const EdgeInsets.all(16),
-                          borderRadius: 16,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    step.title,
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                  ),
-                                  Text(
-                                    step.duration,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: accentColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                step.description,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPricingSection(
-    BuildContext context,
-    ServiceModel service,
-    bool isDark,
-    Color accentColor,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Subscriptions Available',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-        ),
-        const SizedBox(height: 16),
-        Responsive(
-          mobile: Column(
-            children: List.generate(
-              service.pricing.length,
-              (idx) => Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: _buildPricingCard(context, service.pricing[idx], isDark, accentColor),
-              ),
-            ),
-          ),
-          desktop: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: List.generate(
-              service.pricing.length,
-              (idx) => Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(right: idx == service.pricing.length - 1 ? 0 : 16.0),
-                  child: _buildPricingCard(context, service.pricing[idx], isDark, accentColor),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPricingCard(
-    BuildContext context,
-    PricingPlan plan,
-    bool isDark,
-    Color accentColor,
-  ) {
-    return GlassCard(
-      borderRadius: 24,
-      padding: const EdgeInsets.all(24),
-      borderWidth: plan.isPopular ? 1.5 : 1.0,
-      borderGradient: plan.isPopular
-          ? LinearGradient(colors: [AppColors.accentCyan, AppColors.accentPurple])
-          : null,
-      showGlow: plan.isPopular,
-      glowColor: accentColor,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                plan.title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              if (plan.isPopular)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(100),
-                    color: accentColor.withValues(alpha: 0.15),
-                  ),
-                  child: Text(
-                    'POPULAR',
-                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: accentColor),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                plan.price,
-                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 28),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '/ ${plan.period}',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(color: Colors.white10),
-          const SizedBox(height: 12),
-          ...List.generate(
-            plan.features.length,
-            (index) => Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Row(
-                children: [
-                  Icon(Icons.check, color: accentColor, size: 14),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      plan.features[index],
-                      style: const TextStyle(fontSize: 12.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          PrimaryButton(
-            text: 'Launch Plan',
-            height: 44,
-            outline: !plan.isPopular,
-            onPressed: () => context.go(AppRoutes.signup),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAccordionFaqs(
-    BuildContext context,
-    ServiceModel service,
-    bool isDark,
-    Color accentColor,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'FAQ',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-        ),
-        const SizedBox(height: 16),
-        ...List.generate(
-          service.faqs.length,
-          (index) => Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: _FaqTile(faq: service.faqs[index], isDark: isDark, accentColor: accentColor),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPaymentSection(
-    BuildContext context,
-    bool isDark,
-    Color accentColor,
-  ) {
-    final stages = [
-      {
-        'title': 'Advance Payment (30%)',
-        'desc': 'Commitment retainer to allocate design sprints and book team engineers.',
-        'status': 'Stage 1'
-      },
-      {
-        'title': 'Development Starts',
-        'desc': 'Complete repository initialization, package imports, and Figma conversions.',
-        'status': 'Stage 2'
-      },
-      {
-        'title': 'Remaining Payment (50%)',
-        'desc': 'Invoice issued upon Milestone Beta release audit and internal deployment checks.',
-        'status': 'Stage 3'
-      },
-      {
-        'title': 'Final Delivery (20%)',
-        'desc': 'Transfer of vector files, source codes, and deployment key submissions.',
-        'status': 'Stage 4'
-      },
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Payment Milestones',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-        ),
-        const SizedBox(height: 16),
-        Column(
-          children: List.generate(
-            stages.length,
-            (index) {
-              final stage = stages[index];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: GlassCard(
-                  padding: const EdgeInsets.all(16),
-                  borderRadius: 18,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: accentColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          stage['status']!,
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.bold,
-                            color: accentColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(
-                              stage['title']!,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              stage['desc']!,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                height: 1.4,
-                                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            const SizedBox(height: 40),
+                            Icon(service.icon, size: 64, color: Colors.white),
+                            const SizedBox(height: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(4),
+                                color: Colors.white24,
+                              ),
+                              child: Text(
+                                service.category.toUpperCase(),
+                                style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.bold, color: Colors.white),
                               ),
                             ),
                           ],
                         ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+
+              // Content Details list
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // SERVICE OVERVIEW
+                      Text(
+                        service.title,
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                       ),
+                      const SizedBox(height: 12),
+                      Text(
+                        service.overview,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // WHAT'S INCLUDED DELIVERABLES LIST
+                      _buildSectionLabel('WHAT\'S INCLUDED'),
+                      const SizedBox(height: 12),
+                      ...List.generate(
+                        service.benefits.length,
+                        (index) => Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          child: GlassCard(
+                            tier: GlassTier.tier2,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.check_circle_outline, color: AppColors.secondary, size: 18),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    service.benefits[index],
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+
+                      // CHOOSE A PACKAGE
+                      _buildSectionLabel('CHOOSE A PACKAGE'),
+                      const SizedBox(height: 12),
+                      ...List.generate(
+                        service.pricing.length,
+                        (idx) {
+                          final plan = service.pricing[idx];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 14),
+                            child: GlassCard(
+                              tier: GlassTier.tier2,
+                              borderWidth: plan.isPopular ? 1.5 : 1.0,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(plan.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15.5)),
+                                      if (plan.isPopular)
+                                        const StatusBadge(label: 'POPULAR', type: StatusType.premium),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(plan.price, style: GoogleFonts.spaceGrotesk(fontSize: 24, fontWeight: FontWeight.bold, color: primaryAccent)),
+                                      const SizedBox(width: 4),
+                                      Text('/ ${plan.period}', style: const TextStyle(fontSize: 11, color: AppColors.textTertiary)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  ...List.generate(
+                                    plan.features.length,
+                                    (fIdx) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 6.0),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.check, color: primaryAccent, size: 12),
+                                          const SizedBox(width: 8),
+                                          Expanded(child: Text(plan.features[fIdx], style: const TextStyle(fontSize: 12))),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 28),
+
+                      // FAQ SECTION
+                      _buildSectionLabel('FREQUENTLY ASKED'),
+                      const SizedBox(height: 12),
+                      ...List.generate(
+                        service.faqs.length,
+                        (index) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10.0),
+                          child: _FaqTile(q: service.faqs[index].question, a: service.faqs[index].answer, accentColor: primaryAccent),
+                        ),
+                      ),
+
+                      // Spacing for Bottom action bar clearance
+                      const SizedBox(height: 120),
                     ],
                   ),
                 ),
-              );
-            },
+              ),
+            ],
           ),
-        ),
-      ],
+
+          // STICKY BOTTOM ACTION BAR (Glass Tier 4)
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: GlassCard(
+              tier: GlassTier.tier4,
+              borderRadius: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: SafeArea(
+                top: false,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('Starting at', style: TextStyle(fontSize: 9.5, color: AppColors.textTertiary)),
+                        const SizedBox(height: 2),
+                        Text(
+                          startingPrice,
+                          style: GoogleFonts.spaceGrotesk(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: primaryAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                    PrimaryButton(
+                      text: 'Get Quote',
+                      width: 140,
+                      height: 44,
+                      onPressed: () => _openQuoteSheet(context),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionLabel(String label) {
+    return Text(
+      label,
+      style: GoogleFonts.inter(
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.5,
+        color: AppColors.textTertiary,
+      ),
     );
   }
 }
 
 class _FaqTile extends StatefulWidget {
-  final FaqItem faq;
-  final bool isDark;
+  final String q;
+  final String a;
   final Color accentColor;
 
   const _FaqTile({
-    required this.faq,
-    required this.isDark,
+    required this.q,
+    required this.a,
     required this.accentColor,
   });
 
@@ -710,16 +322,17 @@ class _FaqTile extends StatefulWidget {
 }
 
 class _FaqTileState extends State<_FaqTile> {
-  bool _isExpanded = false;
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GlassCard(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      borderRadius: 16,
+      tier: GlassTier.tier2,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       onTap: () {
         setState(() {
-          _isExpanded = !_isExpanded;
+          _expanded = !_expanded;
         });
       },
       child: Column(
@@ -730,38 +343,33 @@ class _FaqTileState extends State<_FaqTile> {
             children: [
               Expanded(
                 child: Text(
-                  widget.faq.question,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                  widget.q,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ),
               AnimatedRotation(
-                turns: _isExpanded ? 0.5 : 0.0,
+                turns: _expanded ? 0.5 : 0.0,
                 duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  Icons.expand_more,
-                  color: widget.accentColor,
-                ),
-              ),
+                child: Icon(Icons.keyboard_arrow_down, color: widget.accentColor),
+              )
             ],
           ),
           AnimatedCrossFade(
             firstChild: const SizedBox(width: double.infinity),
             secondChild: Padding(
-              padding: const EdgeInsets.only(top: 14.0),
+              padding: const EdgeInsets.only(top: 8.0),
               child: Text(
-                widget.faq.answer,
+                widget.a,
                 style: TextStyle(
-                  fontSize: 12.5,
+                  fontSize: 12,
+                  color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
                   height: 1.5,
-                  color: widget.isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                 ),
               ),
             ),
-            crossFadeState: _isExpanded
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 250),
-          ),
+            crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 200),
+          )
         ],
       ),
     );

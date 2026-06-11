@@ -8,6 +8,7 @@ import '../../../../core/routes/app_routes.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/glass_text_field.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/widgets/ambient_glow.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -57,81 +58,55 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isLoading = Provider.of<AuthProvider>(context).isLoading;
-    final primaryAccent = isDark ? AppColors.accentCyan : AppColors.accentPurple;
+    final primaryAccent = isDark ? AppColors.primaryAccent : AppColors.accentBright;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+      backgroundColor: isDark ? AppColors.baseCanvas : AppColors.lightBaseCanvas,
+      appBar: AppBar(
+        title: const Text('Sign In', style: TextStyle(fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+          onPressed: () => context.pop(),
+        ),
+      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Ambient light
-          Positioned(
+          const Positioned(
             top: -50,
             right: -50,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.transparent,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.accentPurple.withValues(alpha: isDark ? 0.12 : 0.04),
-                    blurRadius: 100,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Back to Store chevron
-          Positioned(
-            top: 40,
-            left: 16,
-            child: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new,
-                color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                size: 18,
-              ),
-              onPressed: () => context.go(AppRoutes.home),
-            ),
+            child: AmbientGlow(color: AppColors.primaryAccent, size: 400),
           ),
 
           Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Brand Identity Icon
-                    Icon(
-                      Icons.auto_awesome,
-                      color: primaryAccent,
-                      size: 40,
-                    ),
+                    Icon(Icons.auto_awesome, color: primaryAccent, size: 40),
                     const SizedBox(height: 16),
                     Text(
-                      'Welcome to NZXTGEN',
-                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                            fontWeight: FontWeight.w900,
+                      'Welcome Back',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
                           ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Access your custom development pipelines',
+                      'Sign in to access your projects and services',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
                           ),
                     ),
                     const SizedBox(height: 32),
 
                     GlassCard(
+                      tier: GlassTier.tier2,
                       padding: const EdgeInsets.all(24.0),
-                      borderRadius: 24.0,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -139,16 +114,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.redAccent.withValues(alpha: 0.15),
+                                color: AppColors.error.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.redAccent.withValues(alpha: 0.3),
-                                ),
+                                border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                               ),
                               child: Text(
                                 _errorMessage!,
                                 style: const TextStyle(
-                                  color: Colors.redAccent,
+                                  color: AppColors.error,
                                   fontWeight: FontWeight.w500,
                                   fontSize: 13,
                                 ),
@@ -164,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             keyboardType: TextInputType.emailAddress,
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
-                                return 'Please enter your email';
+                                  return 'Please enter your email';
                               }
                               return null;
                             },
@@ -185,17 +158,35 @@ class _LoginScreenState extends State<LoginScreen> {
                               return null;
                             },
                           ),
+                          const SizedBox(height: 12),
+                          // Forgot Password link
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: GestureDetector(
+                              onTap: () {
+                                context.push(AppRoutes.forgotPassword);
+                              },
+                              child: Text(
+                                'Forgot Password?',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryAccent,
+                                ),
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 24),
                           PrimaryButton(
-                            text: 'Login Workspace',
-                            onPressed: _handleLogin,
+                            text: 'Sign In',
                             isLoading: isLoading,
+                            onPressed: _handleLogin,
                           ),
 
                           const SizedBox(height: 24),
                           Row(
                             children: [
-                              Expanded(child: Divider(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1))),
+                              Expanded(child: Divider(color: isDark ? Colors.white12 : Colors.black12)),
                               Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                                 child: Text(
@@ -203,22 +194,21 @@ class _LoginScreenState extends State<LoginScreen> {
                                   style: TextStyle(
                                     fontSize: 9,
                                     fontWeight: FontWeight.bold,
-                                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                    color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
                                   ),
                                 ),
                               ),
-                              Expanded(child: Divider(color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1))),
+                              Expanded(child: Divider(color: isDark ? Colors.white12 : Colors.black12)),
                             ],
                           ),
                           const SizedBox(height: 20),
 
-                          // Linear social OAuth row
                           Row(
                             children: [
                               Expanded(
                                 child: PrimaryButton(
                                   text: 'Google',
-                                  outline: true,
+                                  variant: ButtonVariant.ghost,
                                   height: 48,
                                   onPressed: () => _handleLogin(),
                                 ),
@@ -227,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Expanded(
                                 child: PrimaryButton(
                                   text: 'Apple ID',
-                                  outline: true,
+                                  variant: ButtonVariant.ghost,
                                   height: 48,
                                   onPressed: () => _handleLogin(),
                                 ),
@@ -242,15 +232,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "Don't have a workspace? ",
+                          "Don't have an account? ",
                           style: TextStyle(
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
                           ),
                         ),
                         GestureDetector(
-                          onTap: () => context.go(AppRoutes.signup),
+                          onTap: () => context.push(AppRoutes.signup),
                           child: Text(
-                            'Create Account',
+                            'Create One',
                             style: TextStyle(
                               color: primaryAccent,
                               fontWeight: FontWeight.bold,

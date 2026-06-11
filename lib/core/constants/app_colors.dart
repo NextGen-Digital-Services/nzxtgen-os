@@ -3,70 +3,91 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Redesigned Dark Mode Palette (Primary Focus)
-  static const Color darkBg = Color(0xFF050816);           // Deep Space Black
-  static const Color darkBgSecondary = Color(0xFF0B1120);  // Graphite Black
-  static const Color darkCardBg = Color(0x1F0B1120);       // Frosted Glass graphite (12% opacity)
-  static const Color darkBorder = Color(0x15FFFFFF);       // Frosty border
-  static const Color darkBorderFocused = Color(0x3A00E5FF); // Electric Cyan border when focused
-  static const Color darkTextPrimary = Colors.white;
-  static const Color darkTextSecondary = Color(0xFF94A3B8); // Soft Gray
+  // Background Hierarchy (Dark Mode Primary)
+  static const Color baseCanvas = Color(0xFF0A0A0F);      // Near-black with micro blue cast
+  static const Color surfaceLevel1 = Color(0xFF0F0F17);   // Cards, panels
+  static const Color surfaceLevel2 = Color(0xFF141420);   // Elevated cards, modals
+  static const Color surfaceLevel3 = Color(0xFF1A1A2E);   // Tooltips, popovers
+  static const Color surfaceLevel4 = Color(0xFF1F1F38);   // Highest elevation
 
-  // Light Mode Palette (Kept clean and high-contrast)
-  static const Color lightBg = Color(0xFFF8F9FC);
-  static const Color lightBgSecondary = Color(0xFFECEFF5);
-  static const Color lightCardBg = Color(0x4DFFFFFF);       // Frosted Card Light (30% opacity)
-  static const Color lightBorder = Color(0x1A000000);       // Frosty Border Light
-  static const Color lightBorderFocused = Color(0x333B82F6);
-  static const Color lightTextPrimary = Color(0xFF0C0C14);
-  static const Color lightTextSecondary = Color(0xFF5E6070);
+  // Accent Color - Electric Indigo System
+  static const Color primaryAccent = Color(0xFF6C63FF);   // Electric Indigo
+  static const Color accentBright = Color(0xFF7B73FF);    // Hover, active states
+  static const Color accentGlow = Color(0x666C63FF);      // 40% opacity glow
+  static const Color accentMuted = Color(0x266C63FF);     // 15% opacity subtle bg
+  static const Color accentUltralight = Color(0x146C63FF); // 8% opacity chip bg
 
-  // Redesigned Neon & Luxury Brand Colors
-  static const Color accentCyan = Color(0xFF00E5FF);       // Electric Cyan
-  static const Color accentBlue = Color(0xFF3B82F6);       // Royal Blue
-  static const Color accentPurple = Color(0xFF8B5CF6);     // Purple Glow
+  // Secondary Accent - Cyber Teal
+  static const Color secondary = Color(0xFF00D4AA);       // Cyber Teal (Success, secondary CTA)
+  static const Color secondaryMuted = Color(0x3300D4AA);  // 20% opacity subtle bg
 
-  // Semantic Status Colors
-  static const Color success = Color(0xFF10B981);          // Emerald
-  static const Color warning = Color(0xFFF59E0B);          // Amber
-  static const Color error = Color(0xFFEF4444);            // Rose Red
+  // Tertiary Accent - Plasma Pink
+  static const Color tertiary = Color(0xFFFF4F9A);        // Plasma Pink (alerts, premium badges)
+  static const Color tertiaryMuted = Color(0x26FF4F9A);   // 15% opacity subtle bg
 
-  // Gradients
+  // Text Colors (Dark Mode)
+  static const Color textPrimary = Color(0xFFF0F0FF);     // Near-white with micro indigo cast
+  static const Color textSecondary = Color(0xFFA0A0C0);   // Muted
+  static const Color textTertiary = Color(0xFF606080);    // Disabled, placeholders
+  static const Color textAccent = Color(0xFF6C63FF);
+  static const Color textInverse = Color(0xFF0A0A0F);     // On light surfaces
+
+  // Semantic Colors
+  static const Color success = Color(0xFF00D4AA);
+  static const Color warning = Color(0xFFFFB547);
+  static const Color error = Color(0xFFFF4757);
+  static const Color info = Color(0xFF6C63FF);
+
+  // Light Mode Tokens
+  static const Color lightBaseCanvas = Color(0xFFFAFAFA);
+  static const Color lightSurfaceLevel1 = Color(0xFFFFFFFF);
+  static const Color lightSurfaceLevel2 = Color(0xFFF4F4F8);
+  static const Color lightTextPrimary = Color(0xFF0A0A0F);
+  static const Color lightTextSecondary = Color(0xFF4A4A6A);
+
+  // Gradient System
+  static const LinearGradient heroGradient = LinearGradient(
+    colors: [primaryAccent, secondary],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   static const LinearGradient premiumGradient = LinearGradient(
-    colors: [accentCyan, accentBlue, accentPurple],
+    colors: [primaryAccent, tertiary],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient hotGradient = LinearGradient(
-    colors: [accentBlue, accentPurple],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
+  static const LinearGradient surfaceGradient = LinearGradient(
+    colors: [surfaceLevel1, baseCanvas],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
   );
 
-  static const LinearGradient darkCardGradient = LinearGradient(
-    colors: [Color(0x0EFFFFFF), Color(0x03FFFFFF)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  static const LinearGradient lightCardGradient = LinearGradient(
-    colors: [Color(0x3AFFFFFF), Color(0x15FFFFFF)],
+  static const LinearGradient glassGradient = LinearGradient(
+    colors: [
+      Color(0x0FFFFFFF), // rgba(255,255,255,0.06)
+      Color(0x05FFFFFF), // rgba(255,255,255,0.02)
+    ],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient glassBorderDark = LinearGradient(
-    colors: [Color(0x26FFFFFF), Color(0x05FFFFFF), Color(0x05FFFFFF), Color(0x1DFFFFFF)],
+    colors: [
+      Color(0x1AFFFFFF), // rgba(255,255,255,0.10)
+      Color(0x0AFFFFFF), // rgba(255,255,255,0.04)
+    ],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    stops: [0.0, 0.45, 0.55, 1.0],
   );
 
   static const LinearGradient glassBorderLight = LinearGradient(
-    colors: [Color(0x22000000), Color(0x04000000), Color(0x04000000), Color(0x12000000)],
+    colors: [
+      Color(0x1C000000),
+      Color(0x06000000),
+    ],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    stops: [0.0, 0.45, 0.55, 1.0],
   );
 }

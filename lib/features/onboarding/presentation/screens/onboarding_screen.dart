@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/routes/app_routes.dart';
-import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/widgets/ambient_glow.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -19,29 +20,6 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-
-  final List<OnboardingSlideData> _slides = [
-    const OnboardingSlideData(
-      title: 'Service Store',
-      description: 'Subscribe to high-performance developers, marketing engines, and brand systems as if you were downloading applications from the App Store.',
-      icon: Icons.storefront_outlined,
-      gradient: AppColors.premiumGradient,
-    ),
-    const OnboardingSlideData(
-      title: 'Workspace Pipeline',
-      description: 'Track active dev sprints, review ticket backlogs, and coordinate deliverable progress bars inside your Notion/Linear-inspired client portal.',
-      icon: Icons.developer_board_outlined,
-      gradient: AppColors.hotGradient,
-    ),
-    OnboardingSlideData(
-      title: 'Developer CLI Keys',
-      description: 'Generate secure API key tokens to integrate command-line triggers, LLM assistants, and automatic workflow tools directly into your CLI scripts.',
-      icon: Icons.vpn_key_outlined,
-      gradient: const LinearGradient(
-        colors: [AppColors.accentCyan, AppColors.accentBlue],
-      ),
-    ),
-  ];
 
   @override
   void dispose() {
@@ -55,51 +33,40 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-  void _completeOnboarding() {
+  void _navigateToAuthGate() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     authProvider.completeOnboarding();
-    context.go(AppRoutes.home);
+    context.go(AppRoutes.authGate);
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryAccent = isDark ? AppColors.accentCyan : AppColors.accentPurple;
+    final primaryAccent = isDark ? AppColors.primaryAccent : AppColors.accentBright;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+      backgroundColor: isDark ? AppColors.baseCanvas : AppColors.lightBaseCanvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background ambient spot
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 400),
-            top: _currentPage == 0 ? -50 : (_currentPage == 1 ? -150 : -100),
-            left: _currentPage == 0 ? -50 : (_currentPage == 1 ? -100 : -150),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 400),
-              width: 320,
-              height: 320,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.transparent,
-                boxShadow: [
-                  BoxShadow(
-                    color: (_slides[_currentPage].gradient.colors.first).withValues(alpha: isDark ? 0.12 : 0.04),
-                    blurRadius: 100,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
-            ),
+          // Slow drifting ambient glow
+          const Positioned(
+            top: 200,
+            left: -150,
+            child: AmbientGlow(color: AppColors.primaryAccent, size: 600),
+          ),
+          const Positioned(
+            bottom: 50,
+            right: -150,
+            child: AmbientGlow(color: AppColors.secondary, size: 600),
           ),
 
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
               child: Column(
                 children: [
-                  // App branding header
+                  // Header branding + Skip link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -109,110 +76,52 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           const SizedBox(width: 8),
                           Text(
                             'NZXTGEN',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  letterSpacing: 2,
-                                  fontWeight: FontWeight.w900,
-                                ),
+                            style: GoogleFonts.spaceGrotesk(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
                           ),
                         ],
                       ),
-                      TextButton(
-                        onPressed: _completeOnboarding,
-                        child: Text(
-                          'Skip',
-                          style: TextStyle(
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                            fontWeight: FontWeight.w600,
+                      if (_currentPage < 2)
+                        TextButton(
+                          onPressed: _navigateToAuthGate,
+                          child: Text(
+                            'Skip',
+                            style: TextStyle(
+                              color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
-                        ),
-                      ),
+                        )
+                      else
+                        const SizedBox(height: 38), // placeholder to balance size
                     ],
                   ),
 
-                  // Sliding Cards
+                  // Horizontal Page Slides
                   Expanded(
-                    child: PageView.builder(
+                    child: PageView(
                       controller: _pageController,
                       onPageChanged: _onPageChanged,
-                      itemCount: _slides.length,
-                      itemBuilder: (context, index) {
-                        final slide = _slides[index];
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 40.0),
-                          child: Center(
-                            child: SingleChildScrollView(
-                              child: GlassCard(
-                                padding: const EdgeInsets.all(32),
-                                borderRadius: 28,
-                                showGlow: true,
-                                glowColor: slide.gradient.colors.first,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(24),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            slide.gradient.colors.first.withValues(alpha: 0.15),
-                                            slide.gradient.colors.last.withValues(alpha: 0.05),
-                                          ],
-                                        ),
-                                        border: Border.all(
-                                          color: slide.gradient.colors.first.withValues(alpha: 0.3),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        slide.icon,
-                                        size: 64,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                        .animate(key: ValueKey(index))
-                                        .scale(duration: 500.ms, curve: Curves.easeOutBack)
-                                        .fadeIn(duration: 300.ms),
-                                    const SizedBox(height: 28),
-                                    Text(
-                                      slide.title,
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                    )
-                                        .animate(key: ValueKey(index + 10))
-                                        .fadeIn(delay: 150.ms, duration: 300.ms)
-                                        .slideY(begin: 0.1, end: 0, delay: 150.ms),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      slide.description,
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                            fontSize: 14,
-                                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                                          ),
-                                    )
-                                        .animate(key: ValueKey(index + 20))
-                                        .fadeIn(delay: 300.ms, duration: 300.ms)
-                                        .slideY(begin: 0.1, end: 0, delay: 300.ms),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
+                      children: [
+                        _buildSlide1(isDark, primaryAccent),
+                        _buildSlide2(isDark, primaryAccent),
+                        _buildSlide3(isDark, primaryAccent),
+                      ],
                     ),
                   ),
 
-                  // Carousel Indicators & Bottom Action
+                  // Bottom action buttons and indicators
                   Column(
                     children: [
+                      // Dots Indicator
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
-                          _slides.length,
+                          3,
                           (index) => AnimatedContainer(
                             duration: const Duration(milliseconds: 250),
                             margin: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -220,31 +129,54 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             height: 8.0,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(4.0),
-                              gradient: _currentPage == index
-                                  ? _slides[index].gradient
-                                  : null,
                               color: _currentPage == index
-                                  ? null
+                                  ? primaryAccent
                                   : (isDark ? Colors.white24 : Colors.black12),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 28),
-                      PrimaryButton(
-                        text: _currentPage == _slides.length - 1 ? 'Launch Workspace' : 'Next Screen',
-                        gradient: _slides[_currentPage].gradient,
-                        onPressed: () {
-                          if (_currentPage == _slides.length - 1) {
-                            _completeOnboarding();
-                          } else {
+                      const SizedBox(height: 32),
+
+                      // CTA Actions
+                      if (_currentPage == 2) ...[
+                        PrimaryButton(
+                          text: 'Get Started',
+                          variant: ButtonVariant.primary,
+                          onPressed: _navigateToAuthGate,
+                        ),
+                        const SizedBox(height: 12),
+                        GestureDetector(
+                          onTap: () {
+                            context.push(AppRoutes.login);
+                          },
+                          child: RichText(
+                            text: TextSpan(
+                              text: 'Already have a workspace? ',
+                              style: TextStyle(fontSize: 12.5, color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary),
+                              children: [
+                                TextSpan(
+                                  text: 'Sign in',
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: primaryAccent),
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        PrimaryButton(
+                          text: 'Continue',
+                          variant: ButtonVariant.primary,
+                          onPressed: () {
                             _pageController.nextPage(
                               duration: const Duration(milliseconds: 350),
-                              curve: Curves.easeInOutCubic,
+                              curve: Curves.easeOutCubic,
                             );
-                          }
-                        },
-                      ),
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        const SizedBox(height: 18), // balancing spacing
+                      ]
                     ],
                   ),
                 ],
@@ -255,18 +187,257 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
+
+  Widget _buildSlide1(bool isDark, Color accentColor) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          // Floating 3D geometric structure
+          _buildFloatingShape(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: AppColors.heroGradient,
+                  ),
+                ),
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    color: isDark ? AppColors.baseCanvas : AppColors.lightBaseCanvas,
+                    boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 16)],
+                  ),
+                  child: const Icon(Icons.web_outlined, size: 48, color: AppColors.secondary),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 50),
+          ShaderMask(
+            shaderCallback: (bounds) => AppColors.heroGradient.createShader(
+              Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+            ),
+            child: Text(
+              'Build Your Vision',
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: -1.0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Text(
+              'Partner with senior developer pipelines to build gorgeous, high-performance websites and bespoke mobile apps.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
+                height: 1.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Websites • Mobile Apps • CRM Systems',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textTertiary, letterSpacing: 1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSlide2(bool isDark, Color accentColor) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          // Neural Network connections float
+          _buildFloatingShape(
+            child: CustomPaint(
+              size: const Size(180, 140),
+              painter: _NeuralNetworkPainter(accentColor),
+            ),
+          ),
+          const SizedBox(height: 50),
+          ShaderMask(
+            shaderCallback: (bounds) => AppColors.heroGradient.createShader(
+              Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+            ),
+            child: Text(
+              'Automate Your Growth',
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: -1.0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Text(
+              'Scale operations by deploying AI agents and high-ROAS marketing campaigns across Meta and Google.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
+                height: 1.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'AI Automation • Paid Ads • SEO',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textTertiary, letterSpacing: 1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSlide3(bool isDark, Color accentColor) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          const SizedBox(height: 40),
+          // Brand composition float
+          _buildFloatingShape(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Transform.rotate(
+                  angle: -0.15,
+                  child: Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      gradient: AppColors.premiumGradient,
+                    ),
+                    child: const Icon(Icons.brush, size: 40, color: Colors.white),
+                  ),
+                ),
+                Transform.rotate(
+                  angle: 0.1,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      color: isDark ? AppColors.surfaceLevel3 : AppColors.lightSurfaceLevel2,
+                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 12)],
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Aa',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.tertiary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 50),
+          ShaderMask(
+            shaderCallback: (bounds) => AppColors.premiumGradient.createShader(
+              Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+            ),
+            child: Text(
+              'Stand Out with Brand',
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: -1.0,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Text(
+              'Establish world-class brand guidelines, pitch deck designs, and memorable typography systems.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
+                height: 1.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Branding • Graphic Design • Identity',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.textTertiary, letterSpacing: 1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingShape({required Widget child}) {
+    return child
+        .animate(onPlay: (controller) => controller.repeat(reverse: true))
+        .slideY(begin: -0.05, end: 0.05, duration: 2.seconds, curve: Curves.easeInOutSine)
+        .then()
+        .animate(onPlay: (controller) => controller.repeat(reverse: true))
+        .rotate(begin: -0.02, end: 0.02, duration: 3.seconds, curve: Curves.easeInOutSine);
+  }
 }
 
-class OnboardingSlideData {
-  final String title;
-  final String description;
-  final IconData icon;
-  final Gradient gradient;
+class _NeuralNetworkPainter extends CustomPainter {
+  final Color accentColor;
 
-  const OnboardingSlideData({
-    required this.title,
-    required this.description,
-    required this.icon,
-    required this.gradient,
-  });
+  _NeuralNetworkPainter(this.accentColor);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paintLine = Paint()
+      ..color = accentColor.withValues(alpha: 0.3)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    final paintDot = Paint()
+      ..color = AppColors.secondary
+      ..style = PaintingStyle.fill;
+
+    final points = [
+      Offset(size.width * 0.2, size.height * 0.5),
+      Offset(size.width * 0.5, size.height * 0.2),
+      Offset(size.width * 0.5, size.height * 0.8),
+      Offset(size.width * 0.8, size.height * 0.5),
+    ];
+
+    // Connect them
+    canvas.drawLine(points[0], points[1], paintLine);
+    canvas.drawLine(points[0], points[2], paintLine);
+    canvas.drawLine(points[1], points[3], paintLine);
+    canvas.drawLine(points[2], points[3], paintLine);
+    canvas.drawLine(points[1], points[2], paintLine);
+
+    // Draw dots
+    for (var pt in points) {
+      canvas.drawCircle(pt, 6.0, paintDot);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

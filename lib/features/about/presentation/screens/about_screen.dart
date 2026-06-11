@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/glass_card.dart';
+import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/widgets/ambient_glow.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -8,234 +13,207 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryAccent = isDark ? AppColors.accentCyan : AppColors.accentPurple;
+    final primaryAccent = isDark ? AppColors.primaryAccent : AppColors.accentBright;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+      backgroundColor: isDark ? AppColors.baseCanvas : AppColors.lightBaseCanvas,
+      appBar: AppBar(
+        title: const Text('About NZXTGEN', style: TextStyle(fontWeight: FontWeight.bold)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+          onPressed: () => context.pop(),
+        ),
+      ),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background ambient light
-          Positioned(
-            top: 150,
-            left: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.accentBlue.withValues(alpha: isDark ? 0.05 : 0.02),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.accentBlue.withValues(alpha: isDark ? 0.05 : 0.02),
-                    blurRadius: 100,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
-            ),
+          // Slow drifting ambient glow
+          const Positioned(
+            top: 200,
+            left: -150,
+            child: AmbientGlow(color: AppColors.primaryAccent, size: 500),
           ),
 
-          SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 24.0, bottom: 120.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Text(
-                    'ABOUT NZXTGEN',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2.0,
-                      color: primaryAccent,
-                    ),
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 60.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 1. HERO SECTION (Full-bleed height 240px)
+                Container(
+                  height: 240,
+                  decoration: const BoxDecoration(
+                    gradient: AppColors.premiumGradient, // #6C63FF -> #FF4F9A
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'The Agency',
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // 1. Two premium photo frames at the top (Horizontal)
-                  Row(
+                  child: Stack(
+                    alignment: Alignment.center,
                     children: [
-                      Expanded(
-                        child: _buildPhotoFrame(
-                          context,
-                          name: 'Fahad Riaz',
-                          role: 'Founder',
-                          title: 'Meet The Founder',
-                          imageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80', // placeholder premium headshot
-                          isDark: isDark,
-                          accentColor: primaryAccent,
+                      Container(color: Colors.black26), // overlay
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'NZXTGEN',
+                            style: GoogleFonts.spaceGrotesk(
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              letterSpacing: 2.0,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Transforming businesses through digital excellence',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 2. MISSION STATEMENT
+                      GlassCard(
+                        tier: GlassTier.tier2,
+                        child: Column(
+                          children: [
+                            const Icon(Icons.format_quote, size: 36, color: AppColors.tertiary),
+                            const SizedBox(height: 8),
+                            Text(
+                              'To accelerate operational intelligence for businesses worldwide by engineering custom software pipelines, scalable mobile architectures, and automated agent scripts that eliminate repetitive manual entries.',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
+                                color: isDark ? Colors.white : Colors.black,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildPhotoFrame(
-                          context,
-                          name: 'Zainab Riaz',
-                          role: 'Co-Founder',
-                          title: 'Meet The Co-Founder',
-                          imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80', // placeholder premium headshot
-                          isDark: isDark,
-                          accentColor: AppColors.accentBlue,
+                      const SizedBox(height: 24),
+
+                      // 3. STATS ROW
+                      Row(
+                        children: [
+                          _buildStatColumn(context, '200+', 'Active Clients', primaryAccent),
+                          _buildStatColumn(context, '50+', 'Projects Delivered', primaryAccent),
+                          _buildStatColumn(context, '5+', 'Years Experience', primaryAccent),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+
+                      // 4. TEAM SECTION
+                      Text(
+                        'The Team Behind NZXTGEN',
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: 180,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          children: [
+                            _buildTeamCard(
+                              context,
+                              name: 'Fahad Riaz',
+                              role: 'Founder & Head Engineer',
+                              bio: 'Specializes in high-performance Flutter architectures and secure database sync hooks.',
+                              color: Colors.purple,
+                            ),
+                            const SizedBox(width: 12),
+                            _buildTeamCard(
+                              context,
+                              name: 'Zainab Riaz',
+                              role: 'Co-Founder & UI/UX Lead',
+                              bio: 'Crafts luxury visual systems and responsive grid wireframes on Figma.',
+                              color: Colors.teal,
+                            ),
+                            const SizedBox(width: 12),
+                            _buildTeamCard(
+                              context,
+                              name: 'Marcus Aurelius',
+                              role: 'Solutions Architect',
+                              bio: 'Coordinates workflows pipeline, Zapier agents, and API gateway routes.',
+                              color: Colors.blue,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // 5. VALUES SECTION
+                      Text(
+                        'Core Agency Values',
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                      const SizedBox(height: 14),
+                      _buildValueCard(
+                        context,
+                        title: 'Technical Rigor',
+                        desc: 'We target 99+ on Google PageSpeed and smooth 60 FPS scrolling speeds on all mobile viewports.',
+                        icon: Icons.speed,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildValueCard(
+                        context,
+                        title: 'Complete Ownership',
+                        desc: 'All source Figma vectors, raw compiled assets, and repository code databases belong fully to you.',
+                        icon: Icons.code,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildValueCard(
+                        context,
+                        title: 'Radical Transparency',
+                        desc: 'Weekly direct deliverables logs, shared Trello boards, and immediate Slack channel communications.',
+                        icon: Icons.chat_bubble_outline,
+                      ),
+                      const SizedBox(height: 32),
+
+                      // 6. CTA SECTION
+                      GlassCard(
+                        tier: GlassTier.tier3,
+                        showGlow: true,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Ready to transform your business?',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.spaceGrotesk(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Schedule a consult sprint with our solutions engineer to design your database flows.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+                            ),
+                            const SizedBox(height: 20),
+                            PrimaryButton(
+                              text: 'Explore Capabilities',
+                              onPressed: () {
+                                context.pop(); // Go back to profile
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
-
-                  // 2. Company Storytelling Sections (Deep Trust Builders)
-                  Text(
-                    'Our Foundation',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  _AboutAccordion(
-                    title: 'Our Mission',
-                    content: 'To accelerate operational intelligence for businesses worldwide by engineering custom software pipelines, scalable mobile architectures, and automated agent scripts that eliminate repetitive manual entries.',
-                    isDark: isDark,
-                    accentColor: primaryAccent,
-                  ),
-                  const SizedBox(height: 12),
-
-                  _AboutAccordion(
-                    title: 'Our Vision',
-                    content: 'A future where companies scale compounding ROI on zero software per-user license lock-ins. We envision fully optimized businesses powered by localized LLM interfaces, native high-performance apps, and unified database layers.',
-                    isDark: isDark,
-                    accentColor: primaryAccent,
-                  ),
-                  const SizedBox(height: 12),
-
-                  _AboutAccordion(
-                    title: 'Why We Started NZXTGEN',
-                    content: 'Commercial agency channels are bloated with off-the-shelf CRM configurations and basic template-based web designs. We founded NZXTGEN to build custom solutions that adapt to your pipelines, not the other way around. No shortcuts, clean source files, complete client ownership.',
-                    isDark: isDark,
-                    accentColor: primaryAccent,
-                  ),
-                  const SizedBox(height: 12),
-
-                  _AboutAccordion(
-                    title: 'Core Values',
-                    content: '• Complete Ownership: All source Figma vectors and compiled binaries belong to you.\n• Radical Speed: Sprints are completed in short cycles with weekly direct deliverables.\n• Technical Rigor: We target 99+ on PageSpeed and smooth 60 FPS on mobile devices.',
-                    isDark: isDark,
-                    accentColor: primaryAccent,
-                  ),
-                  const SizedBox(height: 12),
-
-                  _AboutAccordion(
-                    title: 'What Makes Us Different',
-                    content: 'We operate like an extension of your product team. You get a dedicated project manager, direct Slack channel logs, custom metrics audits, and vector assets right from day one.',
-                    isDark: isDark,
-                    accentColor: primaryAccent,
-                  ),
-                  const SizedBox(height: 12),
-
-                  _AboutAccordion(
-                    title: 'Client Commitment',
-                    content: 'We provide strict 24/7 priority SLAs on all enterprise configurations, backed by continuous post-deployment support and weekly code updates.',
-                    isDark: isDark,
-                    accentColor: primaryAccent,
-                  ),
-                  const SizedBox(height: 12),
-
-                  _AboutAccordion(
-                    title: 'Future Goals',
-                    content: 'Scaling neural agent automation pipelines to handle end-to-end customer support actions for 1,000+ client operations in real-time.',
-                    isDark: isDark,
-                    accentColor: primaryAccent,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPhotoFrame(
-    BuildContext context, {
-    required String name,
-    required String role,
-    required String title,
-    required String imageUrl,
-    required bool isDark,
-    required Color accentColor,
-  }) {
-    return GlassCard(
-      padding: EdgeInsets.zero,
-      borderRadius: 24,
-      showGlow: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Frame header
-          Padding(
-            padding: const EdgeInsets.only(top: 12, left: 12, right: 12, bottom: 8),
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-
-          // Photo area
-          AspectRatio(
-            aspectRatio: 1.0,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
-                  child: Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(Icons.person, size: 40, color: accentColor);
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Details
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  role.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.bold,
-                    color: accentColor,
-                    letterSpacing: 0.5,
-                  ),
-                  textAlign: TextAlign.center,
                 ),
               ],
             ),
@@ -244,73 +222,112 @@ class AboutScreen extends StatelessWidget {
       ),
     );
   }
-}
 
-class _AboutAccordion extends StatefulWidget {
-  final String title;
-  final String content;
-  final bool isDark;
-  final Color accentColor;
+  Widget _buildStatColumn(BuildContext context, String value, String label, Color accentColor) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.spaceGrotesk(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: accentColor,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 10, color: AppColors.textTertiary),
+          ),
+        ],
+      ),
+    );
+  }
 
-  const _AboutAccordion({
-    required this.title,
-    required this.content,
-    required this.isDark,
-    required this.accentColor,
-  });
+  Widget _buildTeamCard(
+    BuildContext context, {
+    required String name,
+    required String role,
+    required String bio,
+    required Color color,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-  @override
-  State<_AboutAccordion> createState() => _AboutAccordionState();
-}
-
-class _AboutAccordionState extends State<_AboutAccordion> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
     return GlassCard(
-      borderRadius: 18,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      onTap: () {
-        setState(() {
-          _expanded = !_expanded;
-        });
-      },
+      tier: GlassTier.tier2,
+      width: 200,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                widget.title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: color.withValues(alpha: 0.15),
+                child: Text(
+                  name.substring(0, 1),
+                  style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 12),
+                ),
               ),
-              AnimatedRotation(
-                turns: _expanded ? 0.5 : 0.0,
-                duration: const Duration(milliseconds: 200),
-                child: Icon(
-                  Icons.expand_more_rounded,
-                  color: widget.accentColor,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    Text(role, style: const TextStyle(fontSize: 8.5, color: AppColors.textTertiary)),
+                  ],
                 ),
               ),
             ],
           ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox(width: double.infinity),
-            secondChild: Padding(
-              padding: const EdgeInsets.only(top: 12.0),
-              child: Text(
-                widget.content,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  height: 1.6,
-                  color: widget.isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                ),
-              ),
+          Text(
+            bio,
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
+              height: 1.4,
             ),
-            crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 200),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildValueCard(
+    BuildContext context, {
+    required String title,
+    required String desc,
+    required IconData icon,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GlassCard(
+      tier: GlassTier.tier2,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.tertiary, size: 24),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
+                const SizedBox(height: 4),
+                Text(
+                  desc,
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/routes/app_routes.dart';
+import '../../../../core/widgets/ambient_glow.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,12 +24,13 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigateToNext() async {
-    // Let splash animations display fully
-    await Future.delayed(const Duration(milliseconds: 2800));
+    // 1800ms animation display loop
+    await Future.delayed(const Duration(milliseconds: 2000));
     if (!mounted) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
+    // Redirect based on onboarding state
     if (authProvider.hasCompletedOnboarding) {
       context.go(AppRoutes.home);
     } else {
@@ -38,143 +41,108 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    const String logoText = 'NZXTGEN';
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.darkBg : AppColors.lightBg,
+      backgroundColor: isDark ? AppColors.baseCanvas : AppColors.lightBaseCanvas,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background ambient neon glows
-          Positioned(
+          // Slow drifting ambient glow blobs (materializing during sequence)
+          const Positioned(
             top: -100,
             left: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.transparent,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.accentCyan.withValues(alpha: isDark ? 0.15 : 0.05),
-                    blurRadius: 100,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
-            ),
+            child: AmbientGlow(color: AppColors.primaryAccent, size: 500),
           ),
-          Positioned(
+          const Positioned(
             bottom: -100,
             right: -100,
-            child: Container(
-              width: 300,
-              height: 300,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.transparent,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.accentPurple.withValues(alpha: isDark ? 0.15 : 0.05),
-                    blurRadius: 100,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
-            ),
+            child: AmbientGlow(color: AppColors.secondary, size: 500),
           ),
+
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Glowing circular logo container
+                // 1. Logo mark scaling from 0.8 to 1.0 with spring physics
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.accentCyan.withValues(alpha: 0.2),
-                        AppColors.accentPurple.withValues(alpha: 0.2),
-                      ],
-                    ),
+                    color: AppColors.primaryAccent.withValues(alpha: 0.12),
                     border: Border.all(
-                      color: AppColors.accentCyan.withValues(alpha: 0.3),
+                      color: AppColors.primaryAccent.withValues(alpha: 0.25),
                       width: 1.5,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.accentCyan.withValues(alpha: 0.1),
-                        blurRadius: 40,
-                        spreadRadius: 5,
-                      ),
-                    ],
                   ),
-                  child: const Icon(
-                    Icons.auto_awesome_outlined,
-                    size: 64,
-                    color: Colors.white,
+                  child: Icon(
+                    Icons.auto_awesome,
+                    size: 52,
+                    color: isDark ? Colors.white : AppColors.primaryAccent,
                   ),
                 )
                     .animate()
-                    .scale(duration: 800.ms, curve: Curves.elasticOut)
-                    .then()
-                    .shake(duration: 400.ms, hz: 4)
-                    .then()
-                    .boxShadow(
-                      begin: const BoxShadow(color: Colors.transparent),
-                      end: const BoxShadow(
-                        color: AppColors.accentCyan,
-                        blurRadius: 30,
-                        spreadRadius: 2,
-                      ),
-                      duration: 800.ms,
-                    ),
+                    .scale(
+                      duration: 600.ms,
+                      curve: Curves.easeOutBack, // spring animation curve
+                    )
+                    .fadeIn(duration: 400.ms),
                 const SizedBox(height: 24),
-                // Glowing text
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'NZXT',
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            letterSpacing: 2,
-                            fontWeight: FontWeight.w900,
-                            color: isDark ? Colors.white : Colors.black,
-                          ),
-                    ),
-                    Text(
-                      'GEN',
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            letterSpacing: 2,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.accentCyan,
-                            shadows: [
-                              Shadow(
-                                color: AppColors.accentCyan.withValues(alpha: 0.8),
-                                blurRadius: 20,
-                              ),
-                            ],
-                          ),
-                    ),
-                  ],
-                )
-                    .animate()
-                    .fadeIn(delay: 400.ms, duration: 600.ms)
-                    .slideY(begin: 0.2, end: 0.0, curve: Curves.easeOutCubic),
-                const SizedBox(height: 8),
+
+                // 2. Wordmark with staggered character-by-character reveal (each char fades + translateY)
+                ShaderMask(
+                  shaderCallback: (bounds) => AppColors.heroGradient.createShader(
+                    Rect.fromLTWH(0, 0, bounds.width, bounds.height),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(logoText.length, (index) {
+                      return Text(
+                        logoText[index],
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 40,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white, // Essential color override for ShaderMask
+                          letterSpacing: -1.0,
+                        ),
+                      )
+                          .animate()
+                          .fadeIn(
+                            delay: (200 + 40 * index).ms, // 40ms stagger offset
+                            duration: 400.ms,
+                          )
+                          .slideY(
+                            begin: 0.3,
+                            end: 0,
+                            delay: (200 + 40 * index).ms,
+                            curve: Curves.easeOutCubic,
+                          );
+                    }),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // 3. Tagline in Overline style fading in below
                 Text(
-                  'NEXT-GENERATION DIGITAL SERVICES',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                        letterSpacing: 4,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  'TRANSFORM YOUR DIGITAL PRESENCE',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 2.5,
+                    color: isDark ? AppColors.textSecondary : AppColors.lightTextSecondary,
+                  ),
                 )
                     .animate()
-                    .fadeIn(delay: 800.ms, duration: 600.ms)
-                    .blurXY(begin: 10, end: 0, delay: 800.ms, duration: 600.ms),
+                    .fadeIn(
+                      delay: 700.ms,
+                      duration: 600.ms,
+                    )
+                    .slideY(
+                      begin: 0.2,
+                      end: 0,
+                      delay: 700.ms,
+                      curve: Curves.easeOutCubic,
+                    ),
               ],
             ),
           ),
